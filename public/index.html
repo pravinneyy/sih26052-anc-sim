@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIH26052 — Adaptive Noise Cancellation, simulation console</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ============ RAIL ============ -->
+<nav class="rail">
+  <h1>Adaptive noise cancellation</h1>
+  <p class="sub">SIH26052 · simulation console<br>Round 1 demonstration</p>
+  <ol id="nav"></ol>
+  <div class="foot">
+    Simulation source: <code>anc_sim.py</code><br>
+    Runs offline. No network required.
+  </div>
+</nav>
+
+<main>
+
+<!-- ============ 1 · ARCHITECTURE ============ -->
+<section class="panel on" id="p1">
+  <header>
+    <h2>Two problems, not one</h2>
+    <p class="lede">The problem statement says "ANC", but it describes two jobs with latency
+    budgets three orders of magnitude apart. That gap decides the whole architecture.</p>
+  </header>
+
+  <div class="grid2 wide">
+    <div class="diagram">
+      <svg viewBox="0 0 720 300" role="img" aria-label="Two-lane architecture: 48 kHz cancellation path and 16 kHz enhancement path with a shared state detector">
+        <text class="dgLabel" x="30" y="24">48 kHz — cancellation</text>
+        <g class="blk" data-info="ref"><rect x="30" y="36" width="130" height="52" rx="3"/>
+          <text x="95" y="58" text-anchor="middle">Reference mic</text>
+          <text class="s" x="95" y="76" text-anchor="middle">outside cup</text></g>
+        <g class="blk" data-info="fxlms"><rect x="215" y="36" width="170" height="52" rx="3"/>
+          <text x="300" y="58" text-anchor="middle">Robust FxLMS</text>
+          <text class="s" x="300" y="76" text-anchor="middle">µ(n) · g(e)</text></g>
+        <g class="blk" data-info="spk"><rect x="440" y="36" width="150" height="52" rx="3"/>
+          <text x="515" y="58" text-anchor="middle">Earcup speaker</text>
+          <text class="s" x="515" y="76" text-anchor="middle">anti-noise</text></g>
+        <path class="dgLine" d="M160 62 H213" marker-end="url(#ar)"/>
+        <path class="dgLine" d="M385 62 H438" marker-end="url(#ar)"/>
+        <path class="dgLine" d="M590 62 H660 V150 H300 V90" marker-end="url(#ar)"/>
+        <text class="dgLabel" x="600" y="145">error mic</text>
+
+        <g class="blk" data-info="det"><rect x="215" y="124" width="170" height="52" rx="3"/>
+          <text x="300" y="146" text-anchor="middle">State detector</text>
+          <text class="s" x="300" y="164" text-anchor="middle">16 kHz · ref mic</text></g>
+
+        <text class="dgLabel" x="30" y="212">16 kHz — enhancement</text>
+        <g class="blk" data-info="boom"><rect x="30" y="224" width="130" height="52" rx="3"/>
+          <text x="95" y="246" text-anchor="middle">Boom mic</text>
+          <text class="s" x="95" y="264" text-anchor="middle">speech + noise</text></g>
+        <g class="blk" data-info="nn"><rect x="215" y="224" width="170" height="52" rx="3"/>
+          <text x="300" y="246" text-anchor="middle">Causal GRU mask</text>
+          <text class="s" x="300" y="264" text-anchor="middle">22 Bark bands</text></g>
+        <g class="blk" data-info="radio"><rect x="440" y="224" width="150" height="52" rx="3"/>
+          <text x="515" y="246" text-anchor="middle">Radio</text>
+          <text class="s" x="515" y="264" text-anchor="middle">clear speech</text></g>
+        <path class="dgLine" d="M160 250 H213" marker-end="url(#ar)"/>
+        <path class="dgLine" d="M385 250 H438" marker-end="url(#ar)"/>
+        <path class="dgLine" d="M300 124 V92" marker-end="url(#ar)"/>
+        <path class="dgLine" d="M300 176 V222" marker-end="url(#ar)"/>
+        <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#4A585F" stroke-width="1.5"/></marker></defs>
+      </svg>
+      <p style="font-size:14px;color:var(--ink2);margin:12px 0 0">Select a block to see what it does.</p>
+    </div>
+
+    <div>
+      <div class="card" id="blockInfo">
+        <h3>Shared state detector</h3>
+        <p>Short-term energy against a slow background estimate. Classifies the acoustic
+        state as normal, non-stationary or transient, and gates both paths.</p>
+        <p>It runs on the reference microphone, not the boom mic — so shouting into the
+        boom mic cannot trigger transient protection.</p>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h3>Latency budget, drawn to scale</h3>
+        <div class="latbar">
+          <div class="lr"><span>Cancellation path</span><span class="num">90&#181;s</span></div>
+          <div class="track"><div class="fill" style="width:0.75%"></div></div>
+        </div>
+        <div class="latbar">
+          <div class="lr"><span>Enhancement path</span><span class="num">12&#8201;ms</span></div>
+          <div class="track"><div class="fill c" style="width:100%"></div></div>
+        </div>
+        <p style="margin-top:12px">The first bar is nearly invisible. That is the point:
+        anti-noise must be phase-aligned with sound crossing 3&#8201;cm of air. No neural
+        network fits in that window, so the cancellation path stays classical.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2 · IMPULSE EXPERIMENT ============ -->
+<section class="panel" id="p2">
+  <header>
+    <h2>What an impulse does to a classical filter</h2>
+    <p class="lede">Fire a gunshot-like transient and watch the three controllers.
+    Vanilla FxLMS loses attenuation and stays degraded long after the sound has gone.</p>
+  </header>
+
+  <div class="grid2">
+    <div>
+      <div class="scope">
+        <canvas id="cv2" width="1600" height="620"></canvas>
+        <div class="scope-legend">
+          <span><i class="swatch" style="border-color:var(--sysA)"></i>A · vanilla FxLMS</span>
+          <span><i class="swatch" style="border-color:var(--sysB)"></i>B · robust, M-estimate</span>
+          <span><i class="swatch" style="border-color:var(--sysC)"></i>C · state-gated hybrid</span>
+        </div>
+      </div>
+      <div class="note todo"><b>Skeleton:</b> traces are computed by a reduced FxLMS in
+      <code>js/sim.js</code>. The final build loads pre-computed <code>data/results.json</code>
+      exported from <code>anc_sim.py</code> at full resolution.</div>
+    </div>
+
+    <div>
+      <div class="controls">
+        <div class="ctl">
+          <label for="noiseType">Background noise</label>
+          <div class="seg" id="noiseType" role="group">
+            <button data-v="stat" aria-pressed="true">Stationary</button>
+            <button data-v="nonstat" aria-pressed="false">Non-stationary</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <label for="amp">Impulse amplitude <output id="ampOut">400</output></label>
+          <input type="range" id="amp" min="0" max="1500" step="50" value="400">
+        </div>
+        <div class="ctl">
+          <label>Pattern</label>
+          <div class="seg" id="pattern" role="group">
+            <button data-v="single" aria-pressed="true">Single</button>
+            <button data-v="burst" aria-pressed="false">Burst &#215;8</button>
+            <button data-v="none" aria-pressed="false">None</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <label>Systems shown</label>
+          <div class="toggles" id="sysToggles">
+            <button class="tg" data-s="A" aria-pressed="true"><i class="dot" style="border-color:var(--sysA)"></i>A</button>
+            <button class="tg" data-s="B" aria-pressed="true"><i class="dot" style="border-color:var(--sysB)"></i>B</button>
+            <button class="tg" data-s="C" aria-pressed="true"><i class="dot" style="border-color:var(--sysC)"></i>C</button>
+          </div>
+        </div>
+        <button class="primary" id="fire">Fire impulse</button>
+      </div>
+
+      <div class="readouts" style="margin-top:14px">
+        <div class="readout bad">
+          <div class="lbl">Attenuation lost — vanilla FxLMS</div>
+          <div class="val" id="r_loss">7.0<span class="u">dB</span></div>
+        </div>
+        <div class="readout bad">
+          <div class="lbl">Recovery time — vanilla FxLMS</div>
+          <div class="val" id="r_rec">1200<span class="u">ms</span></div>
+        </div>
+        <div class="readout good">
+          <div class="lbl">Attenuation lost — ours</div>
+          <div class="val" id="r_lossC">0.1<span class="u">dB</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3 · LISTEN ============ -->
+<section class="panel" id="p3">
+  <header>
+    <h2>Listen to it</h2>
+    <p class="lede">The same four seconds of speech in vehicle noise, with an impulse
+    mid-sentence. Switch between versions while it plays — the position does not reset.</p>
+  </header>
+
+  <div class="grid2">
+    <div>
+      <div class="audio-row" id="audioRow">
+        <button class="audio-btn" data-src="raw" aria-pressed="true">
+          <span class="t">Unprocessed</span><span class="d">what the mic hears</span></button>
+        <button class="audio-btn" data-src="A" aria-pressed="false">
+          <span class="t">System A</span><span class="d">vanilla FxLMS</span></button>
+        <button class="audio-btn" data-src="B" aria-pressed="false">
+          <span class="t">System B</span><span class="d">robust baseline</span></button>
+        <button class="audio-btn" data-src="C" aria-pressed="false">
+          <span class="t">System C</span><span class="d">ours</span></button>
+      </div>
+
+      <div class="card">
+        <div class="transport">
+          <button class="ghost" id="playBtn" style="min-width:92px">Play</button>
+          <div class="bar"><i id="playBar"></i></div>
+          <span class="num" id="playTime" style="font-family:var(--mono);font-size:14px">0.0s</span>
+        </div>
+      </div>
+
+      <div class="note"><b>Use headphones.</b> Laptop speakers cannot reproduce the low
+      frequencies where active cancellation does its work. Hand them to the judge.</div>
+      <div class="note todo"><b>Skeleton:</b> buffers are synthesised in-browser as
+      placeholders. The final build loads rendered <code>audio/*.wav</code> from the
+      Python pipeline, crossfaded on a shared transport so switching never restarts.</div>
+    </div>
+
+    <div class="card">
+      <h3>Why this panel matters most</h3>
+      <p>Every other panel is a chart a judge has to interpret. This one needs no
+      explanation — the comparison happens in four seconds, in their ears.</p>
+      <p>The clip deliberately places an impulse mid-sentence. That is where System A
+      audibly degrades for the following second and System C does not.</p>
+      <p>Never autoplay. The judge presses play.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4 · DETECTOR ============ -->
+<section class="panel" id="p4">
+  <header>
+    <h2>Does the detector fire on the right things?</h2>
+    <p class="lede">A detector that trips whenever a soldier shouts would freeze adaptation
+    constantly and make the system worse than doing nothing.</p>
+  </header>
+
+  <div class="grid2">
+    <div>
+      <div class="scope">
+        <canvas id="cv4" width="1600" height="520"></canvas>
+        <div class="scope-legend">
+          <span><i class="swatch" style="border-color:#7FD4E8"></i>energy ratio</span>
+          <span><i class="swatch" style="border-color:#FF6B5A;border-top-style:dashed"></i>threshold</span>
+          <span><i class="swatch" style="border-color:#4ADEC0"></i>protection state</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="controls">
+        <div class="ctl">
+          <label>Scenario</label>
+          <div class="seg" id="detScenario" role="group">
+            <button data-v="imp" aria-pressed="true">Impulse</button>
+            <button data-v="shout" aria-pressed="false">Loud speech</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <label for="thr">Threshold <output id="thrOut">4.0</output></label>
+          <input type="range" id="thr" min="1.5" max="10" step="0.1" value="4">
+        </div>
+      </div>
+
+      <div class="readouts" style="margin-top:14px">
+        <div class="readout good"><div class="lbl">Detection rate P<sub>d</sub></div>
+          <div class="val" id="r_pd">—<span class="u">%</span></div></div>
+        <div class="readout"><div class="lbl">False alarms P<sub>fa</sub></div>
+          <div class="val" id="r_pfa">—<span class="u">/min</span></div></div>
+      </div>
+
+      <div class="note" style="margin-top:14px">The loud-speech tab is the one that
+      matters. Showing the detector staying quiet through shouting is worth more than
+      any detection-accuracy figure.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5 · MISMATCH ============ -->
+<section class="panel" id="p5">
+  <header>
+    <h2>What happens when the headset shifts</h2>
+    <p class="lede">FxLMS depends on a model of the speaker-to-error-mic path. Move the
+    headset, change the seal, change the ear, and that model is wrong.</p>
+  </header>
+
+  <div class="grid2">
+    <div>
+      <div class="scope">
+        <canvas id="cv5" width="1600" height="520"></canvas>
+        <div class="scope-legend">
+          <span><i class="swatch" style="border-color:var(--sysA)"></i>A</span>
+          <span><i class="swatch" style="border-color:var(--sysB)"></i>B</span>
+          <span><i class="swatch" style="border-color:var(--sysC)"></i>C</span>
+        </div>
+      </div>
+      <div class="note todo"><b>Skeleton:</b> sweep runs live at reduced resolution.
+      Final build reads the pre-computed sweep and marks each system's stability
+      boundary with a labelled value.</div>
+    </div>
+
+    <div>
+      <div class="controls">
+        <div class="ctl">
+          <label for="mm">Secondary-path model error <output id="mmOut">0</output>%</label>
+          <input type="range" id="mm" min="0" max="40" step="2" value="0">
+        </div>
+        <button class="primary" id="runSweep">Run sweep</button>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <h3>Why an evaluator asks this</h3>
+        <p>It is the first question anyone who has built ANC will ask, because it is the
+        failure they have seen. Having the answer on a slider says you have built one too.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6 · LIVE ============ -->
+<section class="panel" id="p6">
+  <header>
+    <h2>Adaptive filter, running here</h2>
+    <p class="lede">Everything else on this console was computed in advance. This one runs
+    in the browser as you move the sliders — including into instability.</p>
+  </header>
+
+  <div class="grid2">
+    <div>
+      <div class="scope">
+        <canvas id="cv6" width="1600" height="520"></canvas>
+        <div class="scope-legend">
+          <span><i class="swatch" style="border-color:#7FD4E8"></i>residual error, dB</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="controls">
+        <div class="ctl">
+          <label for="mu">Step size µ <output id="muOut">0.005</output></label>
+          <input type="range" id="mu" min="1" max="60" step="1" value="5">
+        </div>
+        <div class="ctl">
+          <label for="taps">Filter length <output id="tapsOut">32</output> taps</label>
+          <input type="range" id="taps" min="8" max="96" step="8" value="32">
+        </div>
+        <button class="ghost" id="resetLive" style="width:100%">Reset to converging</button>
+      </div>
+      <div class="readouts" style="margin-top:14px">
+        <div class="readout"><div class="lbl">Steady-state attenuation</div>
+          <div class="val" id="r_live">—<span class="u">dB</span></div></div>
+      </div>
+      <div class="note" style="margin-top:14px">Push µ past roughly 0.02 and the filter
+      diverges. Showing the failure mode is the point — it proves the maths is ours and
+      not one lucky tuned configuration.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 7 · HONESTY ============ -->
+<section class="panel" id="p7">
+  <header>
+    <h2>What we have shown, and what we have not</h2>
+    <p class="lede">Round 1 covers the cancellation path in simulation. The enhancement
+    path and all hardware are still ahead of us.</p>
+  </header>
+
+  <div class="two-col">
+    <div class="card">
+      <h3>Demonstrated</h3>
+      <table>
+        <tr><td>Architecture validated across 6 acoustic path realisations</td></tr>
+        <tr><td>State-gated hybrid keeps vanilla attenuation <em>and</em> robust immunity</td></tr>
+        <tr><td>Detector characterised, including the loud-speech case</td></tr>
+        <tr><td>Projected compute 41 MMAC/s against ~480 available on a Cortex-M7</td></tr>
+        <tr><td>Full bill of materials under &#8377;20,000, all off-the-shelf</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Not yet done</h3>
+      <table>
+        <tr><td>Idealised FIR acoustic paths, not measured or room-simulated</td></tr>
+        <tr><td>Perfect secondary-path model in the main experiment</td></tr>
+        <tr><td>No microphone measurement noise</td></tr>
+        <tr><td>Simulated at 8 kHz; the real cancellation path runs at 48 kHz</td></tr>
+        <tr><td>Neural enhancement path not trained — panel 8's mask is a hand-written
+        stand-in, not a learned model</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:20px"><b>This panel is deliberate.</b> Every team
+  hides its limitations and every experienced judge goes looking. Putting them on screen
+  answers the question before it is asked.</div>
+
+  <div class="card" style="margin-top:20px">
+    <h3>Roadmap</h3>
+    <table>
+      <tr><th style="width:120px">Phase 0</th><td>Simulation — where we are now</td></tr>
+      <tr><th>Phase 1</th><td>Single MCU, Daisy Seed, measured secondary path and latency</td></tr>
+      <tr><th>Phase 2</th><td>Dual-core partition so inference cannot jitter the 48 kHz loop</td></tr>
+      <tr><th>Phase 3</th><td>Wearable build, online secondary-path modelling, bone-conduction VAD</td></tr>
+      <tr><th>Phase 4</th><td>Field validation with human intelligibility testing</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 8 · ENHANCEMENT PREVIEW (illustrative) ============ -->
+<section class="panel" id="p8">
+  <header>
+    <h2>Enhancement preview <span style="color:var(--ink3);font-weight:400">— illustrative, not trained</span></h2>
+    <p class="lede">Panel 1 labels a Causal GRU mask on the 16&#8201;kHz enhancement lane.
+    This panel is a hand-written gain heuristic standing in for that model, so the shape
+    of the idea is visible before a real network exists.</p>
+  </header>
+
+  <div class="grid2">
+    <div>
+      <div class="scope">
+        <canvas id="cv8" width="1600" height="480"></canvas>
+      </div>
+      <div class="bandbars" id="bandBars"></div>
+      <div class="bandbars bblbl" id="bandLabels"></div>
+      <div class="note todo"><b>Not a neural network.</b> Each of 6 broad bands (the real
+      design uses 22 Bark bands) gets a gain from a fast/slow energy-ratio tracker — the
+      same exponential-tracking shape as the state detector in <code>js/sim.js</code>,
+      not a trained mask. It is a placeholder for the shape of the idea, not a
+      performance claim.</div>
+    </div>
+
+    <div>
+      <div class="controls">
+        <div class="ctl">
+          <label>Playback</label>
+          <div class="seg" id="enhSrc" role="group">
+            <button data-v="raw" aria-pressed="true">Boom mic (raw)</button>
+            <button data-v="enh" aria-pressed="false">After mask</button>
+          </div>
+        </div>
+        <div class="transport" style="margin-top:12px">
+          <button class="ghost" id="playBtn8" style="min-width:92px">Play</button>
+          <div class="bar"><i id="playBar8"></i></div>
+          <span class="num" id="playTime8" style="font-family:var(--mono);font-size:14px">0.0s</span>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <h3>Why this is here at all</h3>
+        <p>The problem statement is an AI/ML noise-suppression system. Round 1 has no
+        trained model yet — training one needs the dataset pipeline in the roadmap's
+        later phases — but showing nothing where the enhancement lane should be reads as
+        an afterthought. This panel shows the mechanism a learned mask would sit inside:
+        per-band gain, estimated from local signal statistics, applied and resynthesised.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 9 · TRY YOUR OWN AUDIO ============ -->
+<section class="panel" id="p9">
+  <header>
+    <h2>Try it on your own audio <span style="color:var(--ink3);font-weight:400">— illustrative, not trained</span></h2>
+    <p class="lede">Record from your microphone or upload a clip, then run it through the same
+    gain-mask heuristic as panel 8. This can only demonstrate the enhancement-style idea — it
+    cannot demonstrate the classical FxLMS cancellation path, which needs a second, synchronized
+    reference-noise microphone that a single recorded or uploaded track does not have.</p>
+  </header>
+
+  <div class="grid2">
+    <div>
+      <div class="controls">
+        <div class="ctl" style="display:flex;gap:10px">
+          <button class="primary" id="p9Record" style="flex:1">Record</button>
+          <button class="ghost" id="p9Upload" style="flex:1">Upload file</button>
+          <input type="file" id="p9File" accept="audio/*" hidden>
+        </div>
+        <div class="ctl" id="p9Status" style="margin-top:12px;font-size:14px;color:var(--ink2)">No audio loaded yet.</div>
+        <button class="primary" id="p9Process" disabled>Process</button>
+      </div>
+      <div class="scope" style="margin-top:14px">
+        <canvas id="cv9" width="1600" height="360"></canvas>
+        <div class="scope-legend">
+          <span><i class="swatch" style="border-color:#7FD4E8"></i>per-band gain after processing</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="controls">
+        <div class="ctl">
+          <label>Playback</label>
+          <div class="seg" id="p9PlaySrc" role="group">
+            <button data-v="raw" aria-pressed="true">Your audio</button>
+            <button data-v="enh" aria-pressed="false" disabled>After mask</button>
+          </div>
+        </div>
+        <div class="transport" style="margin-top:12px">
+          <button class="ghost" id="p9PlayBtn" style="min-width:92px">Play</button>
+          <div class="bar"><i id="p9PlayBar"></i></div>
+          <span class="num" id="p9PlayTime" style="font-family:var(--mono);font-size:14px">0.0s</span>
+        </div>
+      </div>
+      <div class="note"><b>Microphone access.</b> Recording asks for mic permission and never
+      leaves the browser — nothing is uploaded anywhere. If mic access is blocked when opened
+      from a bare file, run it via <code>npm start</code> and use <code>localhost</code>
+      instead; uploading a file always works either way.</div>
+      <div class="note todo"><b>Not a neural network, and not full ANC.</b> This applies panel
+      8's per-band energy-ratio mask to whatever you provide, mono, first channel only. It is a
+      hand-written heuristic, was not trained on data, and cannot show impulse cancellation on
+      this input — that needs a second reference-mic signal this page does not have.</div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ STATUS ============ -->
+<div class="status">
+  <button class="ghost" id="tourPrev">Previous</button>
+  <button class="ghost" id="tourNext">Next</button>
+  <span class="tourpos" id="tourPos">1 / 9</span>
+  <span class="spacer"></span>
+  <button class="ghost" id="resetAll">Reset this panel</button>
+  <span style="color:var(--ink2)"><kbd>&#8592;</kbd> <kbd>&#8594;</kbd> panels &nbsp;
+  <kbd>R</kbd> reset &nbsp; <kbd>Space</kbd> fire</span>
+</div>
+
+<script src="js/sim.js"></script>
+<script src="js/draw.js"></script>
+<script src="js/enhance.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/panel1.js"></script>
+<script src="js/panel2.js"></script>
+<script src="js/panel3.js"></script>
+<script src="js/panel4.js"></script>
+<script src="js/panel5.js"></script>
+<script src="js/panel6.js"></script>
+<script src="js/panel8.js"></script>
+<script src="js/panel9.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
