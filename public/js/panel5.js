@@ -6,6 +6,9 @@ const mmEl = document.getElementById('mm');
 const mmOut = document.getElementById('mmOut');
 let p5Sweep = null; // cached {pcts, out, colors} so the slider can move a
                      // marker on the chart without recomputing the sweep
+let p5NoiseSeed = 3; // bumped on every "Execute Stability Sweep" press so
+                     // repeat clicks visibly rerun instead of reproducing
+                     // a pixel-identical chart, which reads as a dead button
 
 if (mmEl && mmOut) {
   mmEl.addEventListener('input', () => {
@@ -60,11 +63,12 @@ function runP5() {
 
   sweepBtn.textContent = 'Executing Sweep…';
   sweepBtn.disabled = true;
+  p5NoiseSeed = (p5NoiseSeed + 1) % 100000 || 1;
 
   setTimeout(() => {
     const n = Math.round(3.2 * FS);
     const { P, S } = makePaths(0);
-    const x = genNoise(n, 'stat', 3);
+    const x = genNoise(n, 'stat', p5NoiseSeed);
     // Dense near the boundary (~180-220%), coarser elsewhere — the real
     // stability boundary for this path/step-size combination sits well
     // past 100% model error, not in the 0-40% range the slider used to

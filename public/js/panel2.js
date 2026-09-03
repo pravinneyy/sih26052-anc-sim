@@ -6,6 +6,15 @@ const getNoise = seg('noiseType', () => runP2());
 const getPattern = seg('pattern', () => runP2());
 const sysOn = { A: true, B: true, C: true };
 
+/* The noise realization used to be a fixed seed (3), so pressing "Fire"
+   with nothing else changed reproduced pixel-identical output — which
+   reads as a dead button even though the sim genuinely reran. Sliders
+   still use this same seed (so dragging amplitude stays reproducible/
+   comparable), but the Fire button itself bumps it, so every press is
+   visibly a new event — matching the spec's own framing of that button:
+   "the judge causes the event." */
+let p2NoiseSeed = 3;
+
 const sysToggles = document.getElementById('sysToggles');
 if (sysToggles) {
   sysToggles.addEventListener('click', e => {
@@ -32,6 +41,7 @@ if (fireBtn) {
     // Add tactile animation
     fireBtn.style.transform = 'scale(0.97)';
     setTimeout(() => { fireBtn.style.transform = ''; }, 100);
+    p2NoiseSeed = (p2NoiseSeed + 1) % 100000 || 1;
     runP2();
   };
 }
@@ -53,7 +63,7 @@ function runP2() {
   }
 
   const noiseType = getNoise() || 'stat';
-  const x = addImpulses(genNoise(n, noiseType, 3), times, amp);
+  const x = addImpulses(genNoise(n, noiseType, p2NoiseSeed), times, amp);
   const colors = { A: '#FF5C5C', B: '#FFB830', C: '#00E5A3' };
   const series = [];
   const res = {};
