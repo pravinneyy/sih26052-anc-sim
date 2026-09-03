@@ -37,10 +37,6 @@
     <div class="rail-brand">
       <div class="rail-badge-row">
         <span class="rail-tag">SIH26052</span>
-        <div class="rail-live-indicator">
-          <span class="pulse-dot"></span>
-          <span>ONLINE</span>
-        </div>
       </div>
       <h1>Adaptive Noise Cancellation</h1>
       <p class="sub">Hardware Architecture & Digital Signal Processing Simulation Console</p>
@@ -48,12 +44,6 @@
 
     <div class="rail-nav-section-title">Navigation Modules</div>
     <ol id="nav"></ol>
-
-    <div class="rail-footer">
-      <div>Core Pipeline: <code>ARM Cortex-M7</code></div>
-      <div>Sample Rate: <code>48 kHz FxLMS / 16 kHz Mask</code></div>
-      <div>Analog Latency: <code>&lt; 90 µs Budget</code></div>
-    </div>
   </nav>
 
   <!-- ============ MAIN CONTENT AREA ============ -->
@@ -63,8 +53,7 @@
     <section class="panel on" id="p1" aria-labelledby="h-p1">
       <header>
         <div class="panel-title-row">
-          <h2 id="h-p1">Solution Architecture & Hardware Specifications</h2>
-          <span class="panel-badge">Module 1 · System Design</span>
+          <h2 id="h-p1">Solution Architecture</h2>
         </div>
         <p class="lede">Dual-lane hybrid tactical architecture partitioning hard real-time 48 kHz active noise
           cancellation (&lt;90 µs latency budget) on Core 0 and 16 kHz causal subband speech enhancement (12 ms latency
@@ -75,83 +64,89 @@
         <div class="diagram">
           <div class="card-header">
             <h3>Interactive Dual-Lane Signal Flow</h3>
-            <span class="tag-badge hw">Click Any Block to Inspect</span>
           </div>
-          <svg viewBox="0 0 720 310" role="img" aria-label="Dual-lane DSP system architecture diagram">
-            <!-- Lane 1: 48 kHz Cancellation Lane -->
-            <text class="dgLabel" x="25" y="24">48 kHz — ACTIVE CANCELLATION LANE (&lt;90 µs TOTAL ANALOG LATENCY
-              BUDGET)</text>
-
-            <g class="blk" data-info="ref">
-              <rect x="25" y="36" width="135" height="52" rx="4" />
-              <text x="92" y="58" text-anchor="middle">Reference Mic Array</text>
-              <text class="s" x="92" y="76" text-anchor="middle">Knowles MEMS · SNR 65dB</text>
-            </g>
-
-            <g class="blk" data-info="fxlms" data-sel="true">
-              <rect x="215" y="36" width="175" height="52" rx="4" />
-              <text x="302" y="58" text-anchor="middle">Robust NFxLMS Engine</text>
-              <text class="s" x="302" y="76" text-anchor="middle">Cortex-M7 Core 0 · µ(n)</text>
-            </g>
-
-            <g class="blk" data-info="spk">
-              <rect x="445" y="36" width="145" height="52" rx="4" />
-              <text x="517" y="58" text-anchor="middle">Earcup Actuator</text>
-              <text class="s" x="517" y="76" text-anchor="middle">40mm Dynamic Driver</text>
-            </g>
-
-            <path class="dgLine" d="M160 62 H213" marker-end="url(#ar)" />
-            <path class="dgLine" d="M390 62 H443" marker-end="url(#ar)" />
-
-            <!-- Error Mic Feedback Path -->
-            <g class="blk" data-info="err">
-              <rect x="610" y="36" width="90" height="52" rx="4" />
-              <text x="655" y="58" text-anchor="middle">Error Mic</text>
-              <text class="s" x="655" y="76" text-anchor="middle">Internal Concha</text>
-            </g>
-            <path class="dgLine" d="M590 62 H608" marker-end="url(#ar)" />
-            <path class="dgLine" d="M655 88 V150 H302 V90" marker-end="url(#ar)" />
-            <text class="dgLabel" x="480" y="145">e(n) Error Feedback Loop</text>
-
-            <!-- State Detector Supervisor -->
-            <g class="blk" data-info="det">
-              <rect x="215" y="125" width="175" height="50" rx="4" />
-              <text x="302" y="147" text-anchor="middle">Shared State Detector</text>
-              <text class="s" x="302" y="164" text-anchor="middle">Energy Ratio Ef/Eb Tracker</text>
-            </g>
-            <path class="dgLine" d="M92 88 V150 H213" marker-end="url(#ar)" />
-
-            <!-- Lane 2: 16 kHz Speech Enhancement Lane -->
-            <text class="dgLabel" x="25" y="210">16 kHz — SPEECH ENHANCEMENT LANE (12 ms FRAME LATENCY BUDGET)</text>
-
-            <g class="blk" data-info="boom">
-              <rect x="25" y="224" width="135" height="52" rx="4" />
-              <text x="92" y="246" text-anchor="middle">Differential Boom Mic</text>
-              <text class="s" x="92" y="264" text-anchor="middle">Target Speech Input</text>
-            </g>
-
-            <g class="blk" data-info="nn">
-              <rect x="215" y="224" width="175" height="52" rx="4" />
-              <text x="302" y="246" text-anchor="middle">Subband Mask Engine</text>
-              <text class="s" x="302" y="264" text-anchor="middle">Cortex-M7 Core 1 · Bark</text>
-            </g>
-
-            <g class="blk" data-info="radio">
-              <rect x="445" y="224" width="145" height="52" rx="4" />
-              <text x="517" y="246" text-anchor="middle">Tactical Radio Line</text>
-              <text class="s" x="517" y="264" text-anchor="middle">Enhanced Speech Output</text>
-            </g>
-
-            <path class="dgLine" d="M160 250 H213" marker-end="url(#ar)" />
-            <path class="dgLine" d="M390 250 H443" marker-end="url(#ar)" />
-            <path class="dgLine" d="M302 125 V90" marker-end="url(#ar)" />
-            <path class="dgLine" d="M302 175 V222" marker-end="url(#ar)" />
-
+          <svg viewBox="0 0 720 320" role="img" aria-label="Dual-lane DSP system architecture diagram: a 48 kHz cancellation lane and a 16 kHz enhancement lane, gated by a shared state detector between them">
             <defs>
               <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
                 <path d="M2 1L8 5L2 9" fill="none" stroke="#64748B" stroke-width="1.5" />
               </marker>
             </defs>
+
+            <!-- Lane 1: 48 kHz cancellation. Extra top padding inside the
+                 panel gives the error-feedback arc room without crossing
+                 anything. -->
+            <rect class="lanePanel" x="16" y="20" width="688" height="108" rx="12" />
+
+            <g class="blk" data-info="ref">
+              <rect x="32" y="60" width="135" height="52" rx="4" />
+              <text x="99" y="82" text-anchor="middle">Reference Mic Array</text>
+              <text class="s" x="99" y="100" text-anchor="middle">Knowles MEMS · SNR 65dB</text>
+            </g>
+
+            <g class="blk" data-info="fxlms" data-sel="true">
+              <rect x="197" y="60" width="175" height="52" rx="4" />
+              <text x="285" y="82" text-anchor="middle">Robust NFxLMS Engine</text>
+              <text class="s" x="285" y="100" text-anchor="middle">Cortex-M7 Core 0 · µ(n)</text>
+            </g>
+
+            <g class="blk" data-info="spk">
+              <rect x="402" y="60" width="145" height="52" rx="4" />
+              <text x="475" y="82" text-anchor="middle">Earcup Actuator</text>
+              <text class="s" x="475" y="100" text-anchor="middle">40mm Dynamic Driver</text>
+            </g>
+
+            <g class="blk" data-info="err">
+              <rect x="577" y="60" width="90" height="52" rx="4" />
+              <text x="622" y="82" text-anchor="middle">Error Mic</text>
+              <text class="s" x="622" y="100" text-anchor="middle">Internal Concha</text>
+            </g>
+
+            <path class="dgLine" d="M167 86 H195" marker-end="url(#ar)" />
+            <path class="dgLine" d="M372 86 H400" marker-end="url(#ar)" />
+            <path class="dgLine" d="M547 86 H575" marker-end="url(#ar)" />
+
+            <!-- Error feedback e(n): arcs above the box row, enters the
+                 filter from the top so it never shares an entry point with
+                 the forward signal (left) or the detector's gating line
+                 (bottom). -->
+            <path class="dgLine feedback" d="M622 60 V38 H285 V60" marker-end="url(#ar)" />
+            <text class="dgFlowLabel" x="454" y="33" text-anchor="middle">error feedback e(n)</text>
+
+            <!-- Shared state detector: same neutral block style as everything
+                 else, told apart only by its dashed outline — it's a
+                 supervisory element, not part of either signal chain. -->
+            <g class="blk detBlk" data-info="det">
+              <rect x="190" y="148" width="190" height="48" rx="4" />
+              <text x="285" y="168" text-anchor="middle">Shared State Detector</text>
+              <text class="s" x="285" y="184" text-anchor="middle">Energy Ratio Ef/Eb · Supervisor</text>
+            </g>
+            <path class="dgLine control" d="M99 112 V172 H188" marker-end="url(#ar)" />
+            <path class="dgLine control" d="M285 148 V112" marker-end="url(#ar)" />
+            <path class="dgLine control" d="M285 196 V232" marker-end="url(#ar)" />
+
+            <!-- Lane 2: 16 kHz enhancement -->
+            <rect class="lanePanel" x="16" y="216" width="688" height="84" rx="12" />
+
+            <g class="blk" data-info="boom">
+              <rect x="32" y="232" width="135" height="52" rx="4" />
+              <text x="99" y="254" text-anchor="middle">Differential Boom Mic</text>
+              <text class="s" x="99" y="272" text-anchor="middle">Target Speech Input</text>
+            </g>
+
+            <g class="blk" data-info="nn">
+              <rect x="197" y="232" width="175" height="52" rx="4" />
+              <text x="285" y="254" text-anchor="middle">Subband Mask Engine</text>
+              <text class="s" x="285" y="272" text-anchor="middle">Cortex-M7 Core 1 · Bark</text>
+            </g>
+
+            <g class="blk" data-info="radio">
+              <rect x="402" y="232" width="145" height="52" rx="4" />
+              <text x="475" y="254" text-anchor="middle">Tactical Radio Line</text>
+              <text class="s" x="475" y="272" text-anchor="middle">Enhanced Speech Output</text>
+            </g>
+
+            <path class="dgLine" d="M167 258 H195" marker-end="url(#ar)" />
+            <path class="dgLine" d="M372 258 H400" marker-end="url(#ar)" />
           </svg>
         </div>
 
@@ -163,7 +158,6 @@
           <div class="card" style="margin-top:16px">
             <div class="card-header">
               <h3>Analog Latency Budget Breakdown</h3>
-              <span class="tag-badge core0">90 µs Max Airgap Budget</span>
             </div>
             <div class="latbar">
               <div class="lr">
@@ -191,17 +185,23 @@
           </div>
         </div>
       </div>
+    </section>
 
-      <!-- Hardware Architecture & BOM Section -->
-      <div style="margin-top:28px">
-        <h3 style="font-size:18px;font-weight:700;margin-bottom:14px;color:#FFFFFF;">Embedded Hardware Platform &
-          Production Bill of Materials (BOM)</h3>
+    <!-- ============ HARDWARE & BOM ============ -->
+    <section class="panel" id="phw" aria-labelledby="h-phw">
+      <header>
+        <div class="panel-title-row">
+          <h2 id="h-phw">Hardware & Bill of Materials</h2>
+        </div>
+        <p class="lede">Embedded platform specifications and per-unit production cost for the ARM Cortex-M7 dual-core
+          tactical ANC headset.</p>
+      </header>
 
+      <div>
         <div class="two-col">
           <div class="card">
             <div class="card-header">
               <h3>System On Chip & DSP Specifications</h3>
-              <span class="tag-badge hw">Embedded Architecture</span>
             </div>
             <div class="table-wrap">
               <table>
@@ -244,7 +244,6 @@
           <div class="card">
             <div class="card-header">
               <h3>Production Bill of Materials (Per Unit)</h3>
-              <span class="tag-badge hw">Commercial COTS</span>
             </div>
             <div class="table-wrap">
               <table>
@@ -301,7 +300,6 @@
       <header>
         <div class="panel-title-row">
           <h2 id="h-p2">Impulse Response & Controller Performance Comparison</h2>
-          <span class="panel-badge">Module 2 · Controller Stability</span>
         </div>
         <p class="lede">Evaluate system stability during high-energy acoustic transients. Robust FxLMS with M-estimation
           and state-gated adaptation prevents coefficient divergence and maintains continuous anti-noise attenuation.
@@ -387,7 +385,6 @@
       <header>
         <div class="panel-title-row">
           <h2 id="h-p3">Acoustic Demonstration & Listening Console</h2>
-          <span class="panel-badge">Module 3 · Audio Evaluation</span>
         </div>
         <p class="lede">Compare live synthesized acoustic audio streams. Seamless transport allows real-time switching
           between unprocessed audio and candidate ANC controllers while maintaining playback position.</p>
@@ -417,7 +414,6 @@
           <div class="card">
             <div class="card-header">
               <h3>Live Audio Transport Player</h3>
-              <span class="tag-badge core0">Glitchless Source Switch</span>
             </div>
             <div class="transport">
               <button class="ghost" id="playBtn" style="min-width:96px">Play</button>
@@ -430,7 +426,6 @@
         <div class="card">
           <div class="card-header">
             <h3>Acoustic Verification Context</h3>
-            <span class="tag-badge hw">Transient Analysis</span>
           </div>
           <p>Audio playback incorporates mid-sentence acoustic transients at $t = 2.0\text{ s}$. System A suffers
             audible filter degradation during transient recovery, whereas System C maintains stable anti-noise
@@ -445,7 +440,6 @@
       <header>
         <div class="panel-title-row">
           <h2 id="h-p4">Transient Detector & State Classifier</h2>
-          <span class="panel-badge">Module 4 · Energy Classification</span>
         </div>
         <p class="lede">Analyzes short-term vs long-term energy ratios ($E_f / E_b$) to distinguish true high-energy
           acoustic transients from loud vocal speech.</p>
@@ -499,7 +493,6 @@
       <header>
         <div class="panel-title-row">
           <h2 id="h-p5">Secondary-Path Acoustic Mismatch Sweep</h2>
-          <span class="panel-badge">Module 5 · Secondary Path S(z)</span>
         </div>
         <p class="lede">Evaluates system stability boundaries under acoustic transfer function errors resulting from
           earcup displacement, seal slippage, or physiological variation.</p>
@@ -529,7 +522,6 @@
           <div class="card" style="margin-top:14px">
             <div class="card-header">
               <h3>Secondary-Path Robustness</h3>
-              <span class="tag-badge hw">Phase Margin</span>
             </div>
             <p>Physical earcup shifts introduce phase and gain variations into the secondary acoustic path $S(z)$.
               Robust FxLMS maintains filter convergence across a broader error tolerance margin (&gt;35% perturbation
@@ -544,7 +536,6 @@
       <header>
         <div class="panel-title-row">
           <h2 id="h-p6">Real-Time Adaptive LMS Filter Simulator</h2>
-          <span class="panel-badge">Module 6 · Filter Tuning</span>
         </div>
         <p class="lede">Interactive real-time parameter tuning for step size $\mu$ and filter tap length $L$.
           Demonstrates convergence speed vs stability divergence boundaries.</p>
@@ -590,7 +581,6 @@
       <header>
         <div class="panel-title-row">
           <h2 id="h-p8">Causal Subband Speech Enhancement Engine</h2>
-          <span class="panel-badge">Module 7 · Speech Enhancement</span>
         </div>
         <p class="lede">Decomposes input speech streams into Bark subbands, computing real-time spectral mask gains to
           isolate speech harmonics from ambient noise fields.</p>
@@ -628,7 +618,6 @@
           <div class="card" style="margin-top:14px">
             <div class="card-header">
               <h3>Subband Gating Architecture</h3>
-              <span class="tag-badge core1">Core 1 Pipeline</span>
             </div>
             <p>Monitors spectral power across Bark frequency bands. Suppresses noise-dominant subbands during non-speech
               intervals to enhance intelligibility over transmission channels.</p>
@@ -642,7 +631,6 @@
       <header>
         <div class="panel-title-row">
           <h2 id="h-p9">Interactive Audio Processing Lab</h2>
-          <span class="panel-badge">Module 8 · Live Testing</span>
         </div>
         <p class="lede">Record custom speech audio from your microphone or upload audio files to test subband spectral
           mask processing in real time.</p>
@@ -689,7 +677,6 @@
           <div class="card" style="margin-top:14px">
             <div class="card-header">
               <h3>Client-Side Audio Processing</h3>
-              <span class="tag-badge hw">Zero Telemetry</span>
             </div>
             <p>Audio recording and processing runs entirely inside the browser using standard WebAudio APIs and our
               multi-band DSP filter bank. No audio streams leave your device.</p>
@@ -704,7 +691,7 @@
   <footer class="status" aria-label="Console Tour and Status Controls">
     <button class="ghost" id="tourPrev">Previous Panel</button>
     <button class="ghost" id="tourNext">Next Panel</button>
-    <span class="tourpos" id="tourPos">1 / 8</span>
+    <span class="tourpos" id="tourPos">1 / 9</span>
 
     <div class="spacer"></div>
 

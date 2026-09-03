@@ -3,7 +3,8 @@
    ========================================================================== */
 
 const PANELS = [
-  ['Architecture & Hardware', 'p1'],
+  ['Architecture', 'p1'],
+  ['Hardware & BOM', 'phw'],
   ['Impulse & Controller Performance', 'p2'],
   ['Acoustic Listening Console', 'p3'],
   ['Transient Energy Classifier', 'p4'],

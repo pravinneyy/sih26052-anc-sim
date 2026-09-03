@@ -5,7 +5,6 @@
 const BLOCK_INFO = {
   ref: {
     title: 'External Reference Microphone Array',
-    badge: 'Hardware · Input Stage',
     desc: 'Dual Knowles SPU0410LR5H-QB ultra-low-noise MEMS microphones (SNR > 65 dBA, 130 dBSPL Acoustic Overload Point) mounted flush on the outer earcup composite shell.',
     specs: [
       { label: 'Sampling Rate', val: '48.0 kHz' },
@@ -16,7 +15,6 @@ const BLOCK_INFO = {
   },
   fxlms: {
     title: 'Hard Real-Time Normalized FxLMS DSP Pipeline',
-    badge: 'Core 0 · 48 kHz C-Engine',
     desc: 'Executes hard real-time Normalized Filtered-X LMS (NFxLMS) on ARM Cortex-M7 Core 0. Features Huber M-estimation and state-gated step adaptation (µ) with guaranteed deterministic latency (<22 µs execution cycle).',
     specs: [
       { label: 'Filter Taps', val: '32–64 FIR Taps' },
@@ -27,7 +25,6 @@ const BLOCK_INFO = {
   },
   spk: {
     title: 'Acoustic Actuator & Speaker Driver',
-    badge: 'Hardware · Anti-Noise Output',
     desc: 'Custom 40mm high-excursion neodymium dynamic transducer driven by an ultra-low-THD Class-D amplifier (MAX98357A), generating instantaneous anti-phase acoustic pressure.',
     specs: [
       { label: 'Frequency Band', val: '20 Hz – 2.4 kHz' },
@@ -38,7 +35,6 @@ const BLOCK_INFO = {
   },
   err: {
     title: 'Internal Error Microphone Feedback Loop',
-    badge: 'Hardware · Feedback Stage',
     desc: 'Omnidirectional MEMS capsule located inside the ear cavity adjacent to the listener’s ear canal. Captures residual acoustic error e(n) = d(n) - y’(n) to drive gradient weight updates.',
     specs: [
       { label: 'Placement', val: 'Concha / Ear Canal' },
@@ -49,7 +45,6 @@ const BLOCK_INFO = {
   },
   det: {
     title: 'Shared Acoustic State & Transient Energy Classifier',
-    badge: 'Dual-Lane · Supervisor',
     desc: 'Monitors short-term energy vs long-term noise floor ratios on the reference mic. Classifies environmental acoustic states (Stationary, Non-Stationary, High-Energy Impulse) to gate adaptation.',
     specs: [
       { label: 'Attack Time', val: '1.2 ms (Ef Tracker)' },
@@ -60,7 +55,6 @@ const BLOCK_INFO = {
   },
   boom: {
     title: 'Directional Noise-Canceling Boom Microphone',
-    badge: 'Hardware · Speech Input',
     desc: 'Close-talk differential electret/MEMS boom capsule positioned at the mouth. Captures operator speech alongside surrounding cockpit/vehicle acoustic noise.',
     specs: [
       { label: 'Directivity', val: 'Cardioid / Hypercardioid' },
@@ -71,7 +65,6 @@ const BLOCK_INFO = {
   },
   nn: {
     title: 'Causal Subband Speech Enhancement Engine',
-    badge: 'Core 1 · 16 kHz Subband Engine',
     desc: 'Decomposes 16 kHz speech signal into multi-band Bark filters. Computes real-time spectral Wiener gains using a streaming causal state tracker to isolate speech harmonics.',
     specs: [
       { label: 'Latency Budget', val: '12.0 ms Frame Delay' },
@@ -82,7 +75,6 @@ const BLOCK_INFO = {
   },
   radio: {
     title: 'Tactical Radio & Intercom Output',
-    badge: 'Hardware · Comm Out',
     desc: 'Delivers clear, enhanced speech to tactical radios (VHF/UHF, Mil-Spec intercoms) with crystal clarity even in 115 dBSPL cockpit noise.',
     specs: [
       { label: 'Interface', val: 'Balanced Audio / PTT' },
@@ -115,7 +107,7 @@ function updateBlockInfo(key) {
   blockCard.innerHTML = `
     <div class="card-header">
       <h3>${item.title}</h3>
-      <span class="tag-badge hw">${item.badge}</span>
+      
     </div>
     <p>${item.desc}</p>
     ${specsHtml}
