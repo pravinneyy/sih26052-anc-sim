@@ -514,9 +514,23 @@
           <div class="controls">
             <div class="ctl">
               <label for="mm">Secondary-Path Model Error <output id="mmOut">0</output>%</label>
-              <input type="range" id="mm" min="0" max="40" step="2" value="0">
+              <input type="range" id="mm" min="0" max="240" step="10" value="0">
             </div>
             <button class="primary" id="runSweep">Execute Stability Sweep</button>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <div class="card-header">
+              <h3>Stability boundary</h3>
+            </div>
+            <div class="readouts">
+              <div class="readout"><div class="lbl">System A — vanilla</div>
+                <div class="val" id="r_boundA">—<span class="u">%</span></div></div>
+              <div class="readout"><div class="lbl">System B — robust</div>
+                <div class="val" id="r_boundB">—<span class="u">%</span></div></div>
+              <div class="readout good"><div class="lbl">System C — state-gated</div>
+                <div class="val" id="r_boundC">—<span class="u">%</span></div></div>
+            </div>
           </div>
 
           <div class="card" style="margin-top:14px">
@@ -524,8 +538,8 @@
               <h3>Secondary-Path Robustness</h3>
             </div>
             <p>Physical earcup shifts introduce phase and gain variations into the secondary acoustic path $S(z)$.
-              Robust FxLMS maintains filter convergence across a broader error tolerance margin (&gt;35% perturbation
-              limit).</p>
+              All three systems tolerate substantial model error before attenuation collapses — the stability
+              boundary above is where each one's measured attenuation crosses zero.</p>
           </div>
         </div>
       </div>

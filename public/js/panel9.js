@@ -366,6 +366,24 @@ function p9DrawWave() {
 function p9Reset() {
   p9StopNode();
   p9raw = null; p9enh = null; p9lastResult = null; p9offset = 0; p9cur = 'orig';
+
+  // Controls back to defaults — these were never reset before.
+  const strengthEl = document.getElementById('p9Strength');
+  if (strengthEl) { strengthEl.value = -18; document.getElementById('p9StrengthOut').textContent = '-18'; }
+  const adaptEl = document.getElementById('p9Adapt');
+  if (adaptEl) { adaptEl.value = 1; document.getElementById('p9AdaptOut').textContent = P9_ADAPT_LABELS[1]; }
+  const tsensEl = document.getElementById('p9Tsens');
+  if (tsensEl) { tsensEl.value = 6; document.getElementById('p9TsensOut').textContent = '6.0'; }
+  const swTrans = document.getElementById('p9SwTrans'); if (swTrans) swTrans.setAttribute('aria-pressed', 'true');
+  const swImp = document.getElementById('p9SwImp'); if (swImp) swImp.setAttribute('aria-pressed', 'true');
+
+  // Source picker back to "Record"
+  document.querySelectorAll('#p9SrcPick button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === 'mic'));
+  const paneMic = document.getElementById('p9PaneMic'), paneFile = document.getElementById('p9PaneFile'), paneDemo = document.getElementById('p9PaneDemo');
+  if (paneMic) paneMic.hidden = false;
+  if (paneFile) paneFile.hidden = true;
+  if (paneDemo) paneDemo.hidden = true;
+
   document.querySelectorAll('#p9AbRow button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === 'orig'));
   const enhBtn = document.querySelector('#p9AbRow button[data-v="enh"]');
   if (enhBtn) enhBtn.disabled = true;

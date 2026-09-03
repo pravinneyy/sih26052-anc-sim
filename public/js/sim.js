@@ -253,10 +253,18 @@ function runFxLMS(x, P, S, Shat, variant, mu, L) {
       }
     }
 
-    // Normalized Power Calculation
+    // Normalized Power Calculation. This smoothing constant controls how
+    // fast the step-size normalizer tracks the reference signal's local
+    // power. At 0.999 (~250ms time constant) it lags badly behind the
+    // colored/tonal noise used here, starving the effective step size and
+    // preventing convergence entirely (verified: even 20s of adaptation
+    // never reached positive attenuation at that value, for any tested mu).
+    // 0.9 (~10-sample time constant) tracks power closely enough to
+    // converge in well under a second while the Math.min(pw,4*pnorm) bound
+    // below still protects against an impulse inflating the normalizer.
     let pw = 0;
     for (let i = 0; i < L; i++) pw += xfb[i] * xfb[i];
-    pnorm = 0.999 * pnorm + 0.001 * Math.min(pw, 4.0 * pnorm);
+    pnorm = 0.9 * pnorm + 0.1 * Math.min(pw, 4.0 * pnorm);
 
     const g = m / (pnorm + 1e-6);
 
