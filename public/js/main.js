@@ -1,28 +1,94 @@
-/* main.js — reset-all, redraw dispatch, initial render. Loaded last so every
-   panelN.js has already defined the state/functions referenced below. */
-function resetPanel(){
-  if(cur===1){ampEl.value=400;ampOut.textContent='400';
-    document.querySelectorAll('#sysToggles .tg').forEach(b=>{sysOn[b.dataset.s]=true;b.setAttribute('aria-pressed',true);});
-    runP2();}
-  if(cur===3){thrEl.value=4;thrOut.textContent='4.0';window.__thr=4;runP4();}
-  if(cur===4){mmEl.value=0;mmOut.textContent='0';}
-  if(cur===5){document.getElementById('resetLive').click();}
-  if(cur===7){
-    if(playing8){srcNode8.onended=null;srcNode8.stop();playing8=false;
-      document.getElementById('playBtn8').textContent='Play';}
-    offset8=0; curSrc8='raw';
-    document.querySelectorAll('#enhSrc button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v==='raw'));
-    runP8();
-  }
-  if(cur===8) p9Reset();
-}
-document.getElementById('resetAll').onclick=resetPanel;
+/* ==========================================================================
+   main.js — Master Application Boot, Redraw Dispatcher & Global Controls
+   ========================================================================== */
 
-/* ---------- redraw on panel change ---------- */
-function redraw(){
-  if(cur===1)runP2();
-  if(cur===3)runP4();
-  if(cur===5)runP6();
-  if(cur===7)runP8();
+function resetPanel() {
+  const panelId = PANELS[cur] ? PANELS[cur][1] : '';
+
+  if (panelId === 'p2') {
+    const ampEl = document.getElementById('amp');
+    const ampOut = document.getElementById('ampOut');
+    if (ampEl && ampOut) {
+      ampEl.value = 400;
+      ampOut.textContent = '400';
+    }
+    document.querySelectorAll('#sysToggles .tg').forEach(b => {
+      sysOn[b.dataset.s] = true;
+      b.setAttribute('aria-pressed', 'true');
+    });
+    if (typeof runP2 === 'function') runP2();
+  }
+
+  if (panelId === 'p4') {
+    const thrEl = document.getElementById('thr');
+    const thrOut = document.getElementById('thrOut');
+    if (thrEl && thrOut) {
+      thrEl.value = 4.0;
+      thrOut.textContent = '4.0';
+    }
+    window.__thr = 4.0;
+    if (typeof runP4 === 'function') runP4();
+  }
+
+  if (panelId === 'p5') {
+    const mmEl = document.getElementById('mm');
+    const mmOut = document.getElementById('mmOut');
+    if (mmEl && mmOut) {
+      mmEl.value = 0;
+      mmOut.textContent = '0';
+    }
+    if (typeof runP5 === 'function') runP5();
+  }
+
+  if (panelId === 'p6') {
+    const resetBtn = document.getElementById('resetLive');
+    if (resetBtn) resetBtn.click();
+  }
+
+  if (panelId === 'p8') {
+    if (typeof playing8 !== 'undefined' && playing8 && typeof srcNode8 !== 'undefined' && srcNode8) {
+      srcNode8.onended = null;
+      try { srcNode8.stop(); } catch (e) {}
+      playing8 = false;
+      const playBtn = document.getElementById('playBtn8');
+      if (playBtn) playBtn.textContent = 'Play';
+    }
+    if (typeof offset8 !== 'undefined') offset8 = 0;
+    if (typeof curSrc8 !== 'undefined') curSrc8 = 'raw';
+    document.querySelectorAll('#enhSrc button').forEach(b => {
+      b.setAttribute('aria-pressed', b.dataset.v === 'raw');
+    });
+    if (typeof runP8 === 'function') runP8();
+  }
+
+  if (panelId === 'p9') {
+    if (typeof p9Reset === 'function') p9Reset();
+  }
 }
+
+const resetAllBtn = document.getElementById('resetAll');
+if (resetAllBtn) {
+  resetAllBtn.onclick = resetPanel;
+}
+
+// Redraw handler based on active panel ID
+function redraw() {
+  const panelId = PANELS[cur] ? PANELS[cur][1] : '';
+  if (panelId === 'p2' && typeof runP2 === 'function') runP2();
+  if (panelId === 'p4' && typeof runP4 === 'function') runP4();
+  if (panelId === 'p5' && typeof runP5 === 'function') runP5();
+  if (panelId === 'p6' && typeof runP6 === 'function') runP6();
+  if (panelId === 'p8' && typeof runP8 === 'function') runP8();
+}
+
+// Debounce window resize
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    redraw();
+  }, 120);
+});
+
+// Boot Application
 show(0);
