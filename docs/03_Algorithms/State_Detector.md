@@ -59,6 +59,8 @@ else:                    remain in current state
    └───────────────────────── Recovery
 ```
 
+![State Detector State Transition Diagram](images/diagram_3_state_detector_fsm.png)
+
 The precise transition logic (e.g., minimum dwell time in Protection, hysteresis between thresholds) implemented in the simulation is documented in the panel's own configuration and should be read alongside the codebase; this document describes the general detection principle rather than asserting specific numeric behaviour not present in the source material.
 
 ## 8. Detection Probability and False Alarm Probability

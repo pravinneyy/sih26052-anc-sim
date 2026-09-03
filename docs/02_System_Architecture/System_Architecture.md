@@ -38,6 +38,8 @@ This document describes the architecture of the current web-based Round‑1 simu
                           └──────────────────┘
 ```
 
+![System Architecture Diagram](images/diagram_1_system_architecture.png)
+
 **Status:** All nine panels above are **Implemented** in the sense that they exist and run client-side in the browser. The FxLMS engine and state detector implement real signal-processing logic (see `03_Algorithms/`); the enhancement preview is explicitly **Illustrative**.
 
 ## 3. Panel-by-Panel Description

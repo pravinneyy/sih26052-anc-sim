@@ -36,6 +36,8 @@ Any documentation, diagram, or demonstration describing one of these mechanisms 
                       step-size scaling, update pausing, error limiting)
 ```
 
+![Protection/Recovery Block Diagram](images/diagram_4_protection_recovery.png)
+
 ## 7. Inputs and Outputs
 - **Inputs:** current state label from the State Detector (`Normal` / `Protection` / `Recovery`).
 - **Outputs:** a modification applied to the FxLMS adaptation process (mechanism to be finalized).

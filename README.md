@@ -145,13 +145,13 @@ The system partitions the acoustic processing workload into two concurrent, asyn
                                    ┌───────────────────────────────┴───────────────┐
                                    │                                               │
                                    ▼                                               ▼
-                   ┌───────────────────────────────┐               ┌───────────────────────────────┐
-                   │     ADAPTIVE WEIGHT UPDATE    │               │  LANE 2: 16 kHz SPEECH LANE   │
-                   │    w(n+1) = w(n) + μ·e·x'     │               │     Causal Subband Mask       │
-                   │ (Gated by Detector Condition) │               │   (Preserves Voice Audio)     │
-                   └───────────────────────────────┘               └───────────────┬───────────────┘
-                                                                                   │
-                                                                                   ▼
+                    ┌───────────────────────────────┐               ┌───────────────────────────────┐
+                    │     ADAPTIVE WEIGHT UPDATE    │               │  LANE 2: 16 kHz SPEECH LANE   │
+                    │    w(n+1) = w(n) + μ·e·x'     │               │     Causal Subband Mask       │
+                    │ (Gated by Detector Condition) │               │   (Preserves Voice Audio)     │
+                    └───────────────────────────────┘               └───────────────┬───────────────┘
+                                                                                    │
+                                                                                    ▼
                                                                         TACTICAL AUDIO OUTPUT
 ```
 
@@ -179,6 +179,10 @@ The system partitions the acoustic processing workload into two concurrent, asyn
                                    [ Gated by Detector   ]
 ```
 
+<p align="center">
+  <img src="docs/02_System_Architecture/images/diagram_1_system_architecture.png" alt="System Architecture Diagram" width="850"/>
+</p>
+
 ---
 
 ## 5. Core Algorithms & Mathematical Foundations
@@ -205,6 +209,10 @@ $$\mathbf{x}'(n) = [x'(n), x'(n-1), \dots, x'(n-L+1)]^T$$
 
 The fundamental FxLMS coefficient adaptation equation is:
 $$\mathbf{w}(n+1) = \mathbf{w}(n) + \mu \, e(n) \, \mathbf{x}'(n)$$
+
+<p align="center">
+  <img src="docs/03_Algorithms/images/diagram_2_fxlms_block_diagram.png" alt="FxLMS Block Diagram" width="750"/>
+</p>
 
 ---
 
@@ -256,6 +264,10 @@ $$R(n) = \frac{E(n)}{E_{bg}(n) + \delta}$$
         └──────────────────────────── RECOVERY
 ```
 
+<p align="center">
+  <img src="docs/03_Algorithms/images/diagram_3_state_detector_fsm.png" alt="State Detector State Transition Diagram" width="650"/>
+</p>
+
 - **Normal State ($R(n) \le T_{protect}$):** Nominal ambient noise; standard adaptive step size $\mu_{norm}$.
 - **Protection State ($R(n) > T_{protect}$):** Transient impulse detected (e.g., blast); adaptation is instantly clamped or frozen ($\mu_{protect} \approx 0$ or error clipped) to prevent coefficient corruption.
 - **Recovery State ($R(n) < T_{recover}$):** Impulse has passed; step size is gradually ramped over a configurable dwell time back to $\mu_{norm}$.
@@ -271,6 +283,10 @@ $$\mu(n) = \begin{cases}
 \mu_0 \cdot \gamma_{protect} \quad (\gamma_{protect} \in [0, 0.05]) & \text{if State} = \text{PROTECTION} \\
 \mu_0 \cdot \left[ \gamma_{protect} + (1-\gamma_{protect}) \frac{n - n_{trans}}{N_{ramp}} \right] & \text{if State} = \text{RECOVERY}
 \end{cases}$$
+
+<p align="center">
+  <img src="docs/03_Algorithms/images/diagram_4_protection_recovery.png" alt="Protection & Recovery Framework" width="700"/>
+</p>
 
 ---
 

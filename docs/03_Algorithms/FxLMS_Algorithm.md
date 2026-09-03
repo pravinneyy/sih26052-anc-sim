@@ -97,6 +97,8 @@ x(n) ──►[ Adaptive Filter W(z) ]──► y(n) ──►[ Secondary Path S
                                     e(n), x'(n) ──►[ LMS weight update ]──► updates W(z)
 ```
 
+![FxLMS Block Diagram](images/diagram_2_fxlms_block_diagram.png)
+
 ## 14. Inputs and Outputs
 - **Inputs:** `x(n)` (reference), `e(n)` (measured error), `Ŝ(z)` (estimated secondary path, assumed available).
 - **Outputs:** `y(n)` (cancelling signal sent to the secondary source), updated `w(n)`.
