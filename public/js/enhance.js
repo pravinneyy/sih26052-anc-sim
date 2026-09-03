@@ -23,6 +23,7 @@
 const ENH_N = 512;      // FFT size
 const ENH_HOP = 128;    // 8 ms hop at 16 kHz, 75% overlap
 const ENH_SR = 16000;
+const ENH_NOISE_FLOOR = 1e-8; // absolute floor on the tracked noise PSD per bin
 
 /* ---------- iterative radix-2 FFT, shared by every enhProcess() call ---------- */
 function enhMakeFFT(N) {
@@ -80,7 +81,7 @@ function enhProcess(x, opt) {
   const wsum = new Float64Array(x.length);
 
   const re = new Float64Array(ENH_N), im = new Float64Array(ENH_N);
-  const noise = new Float64Array(bins).fill(1e-6);
+  const noise = new Float64Array(bins).fill(Math.max(ENH_NOISE_FLOOR, 1e-6));
   const S = new Float64Array(bins);
   const Smin = new Float64Array(bins).fill(1e9);
   const Stmp = new Float64Array(bins).fill(1e9);
@@ -151,7 +152,13 @@ function enhProcess(x, opt) {
         const I = (S[k] / (Smin[k] + 1e-12)) > DELTA ? 1 : 0;
         p[k] = AP * p[k] + (1 - AP) * I;
         const ad = AD + (1 - AD) * p[k];
-        noise[k] = ad * noise[k] + (1 - ad) * pow[k];
+        /* Floor the noise estimate well above zero. A real microphone
+           never produces exact digital silence — there's always some
+           analog noise floor — but a synthesized or heavily-gated source
+           can, and if noise[k] decays toward true zero, gamma=pow/noise
+           explodes the instant any signal appears, defeating suppression
+           entirely right when it matters most. */
+        noise[k] = Math.max(ENH_NOISE_FLOOR, ad * noise[k] + (1 - ad) * pow[k]);
       }
     }
 

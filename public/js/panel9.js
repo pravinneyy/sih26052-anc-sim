@@ -31,6 +31,23 @@ function p9CurrentBuffer() {
   return p9cur === 'enh' ? p9enh : p9raw;
 }
 
+/* Peak/RMS of the loaded input, shown right in the status line so a quiet
+   mic input is visible without guessing — a laptop mic with no automatic
+   gain control (disabled on purpose here, see the Record handler) can
+   legitimately record very low levels, which the algorithm handles
+   mathematically fine but can make the effect harder to hear. */
+function p9LevelInfo(buf) {
+  const d = buf.getChannelData(0);
+  let peak = 0, sum = 0;
+  for (let i = 0; i < d.length; i++) { const a = Math.abs(d[i]); if (a > peak) peak = a; sum += d[i] * d[i]; }
+  const rms = Math.sqrt(sum / d.length);
+  const peakDb = 20 * Math.log10(peak + 1e-12);
+  let note = '';
+  if (peak < 0.02) note = ' — very quiet, try speaking closer to the mic or louder';
+  else if (peak < 0.08) note = ' — quiet input';
+  return `peak ${peakDb.toFixed(0)}dBFS, RMS ${rms.toFixed(3)}${note}`;
+}
+
 /* ---- resample any decoded/recorded buffer to mono @ ENH_SR ---- */
 async function p9ToMono16k(buf) {
   const len = Math.max(1, Math.round(buf.duration * ENH_SR));
@@ -132,7 +149,7 @@ async function p9LoadBlob(blob, label) {
     const dlBtn = document.getElementById('p9DlBtn');
     if (dlBtn) dlBtn.disabled = true;
 
-    p9SetStatus(`${label} · ${p9raw.duration.toFixed(1)}s loaded`);
+    p9SetStatus(`${label} · ${p9raw.duration.toFixed(1)}s loaded · ${p9LevelInfo(p9raw)}`);
     p9DrawWave();
     p9DrawSpecEmpty();
   } catch (err) {
@@ -157,7 +174,7 @@ if (p9LoadDemoBtn) {
     document.getElementById('p9PlayBtn').disabled = false;
     document.getElementById('p9DlBtn').disabled = true;
 
-    p9SetStatus(`built-in clip · ${p9raw.duration.toFixed(1)}s loaded`);
+    p9SetStatus(`built-in clip · ${p9raw.duration.toFixed(1)}s loaded · ${p9LevelInfo(p9raw)}`);
     p9DrawWave();
     p9DrawSpecEmpty();
   };
@@ -213,7 +230,7 @@ if (p9ProcessBtn) {
       if (enhBtn) enhBtn.disabled = false;
       document.getElementById('p9DlBtn').disabled = false;
       p9ProcessBtn.disabled = false;
-      p9SetStatus('Processed. Switch to Enhanced and listen.');
+      p9SetStatus(`Processed. Enhanced ${p9LevelInfo(p9enh)}. Switch to Enhanced and listen.`);
       p9PickAB('enh');
       p9DrawSpec();
       p9DrawWave();
