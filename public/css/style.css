@@ -1226,3 +1226,47 @@ td.mono {
     gap: 8px;
   }
 }
+
+/* ---------- NOTE CALLOUTS (panel 9) ---------- */
+.note {
+  border-left: 3px solid var(--accent-cyan);
+  background: rgba(0, 210, 255, 0.06);
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 14px 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.note b { color: var(--text-primary); font-weight: 600; }
+.note.warn {
+  border-left-color: var(--sysB);
+  background: rgba(255, 184, 48, 0.07);
+}
+
+/* ---------- SELECT (panel 9 demo picker) ---------- */
+select {
+  background: var(--bg-screen);
+  color: var(--text-primary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  cursor: pointer;
+}
+select:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 1px; }
+
+/* ---------- 3-column source picker (panel 9) ---------- */
+.audio-row.n3 { grid-template-columns: repeat(3, 1fr); }
+
+/* ---------- recording indicator: functional state feedback, not
+   decoration — the dot only pulses while a recording is actually live ---------- */
+.rec-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--sysA); display: inline-block; margin-right: 8px;
+}
+.rec-on .rec-dot { animation: enh-pulse 1s infinite; }
+@keyframes enh-pulse { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .rec-on .rec-dot { animation: none; } }
+
+#p9SeekBar { cursor: pointer; }

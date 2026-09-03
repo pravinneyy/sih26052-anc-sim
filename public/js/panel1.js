@@ -64,13 +64,13 @@ const BLOCK_INFO = {
     ]
   },
   nn: {
-    title: 'Causal Subband Speech Enhancement Engine',
-    desc: 'Decomposes 16 kHz speech signal into multi-band Bark filters. Computes real-time spectral Wiener gains using a streaming causal state tracker to isolate speech harmonics.',
+    title: 'Log-MMSE Speech Enhancement Engine',
+    desc: 'Ephraim & Malah decision-directed log-MMSE spectral suppression on a 512-point STFT, with minima-controlled recursive noise tracking and a transient detector that freezes the noise estimate during a detected impulse. A published, classical algorithm — try it live on panel 9.',
     specs: [
-      { label: 'Latency Budget', val: '12.0 ms Frame Delay' },
-      { label: 'Frequency Bands', val: '6–22 Subbands' },
+      { label: 'Frame / Hop', val: '512 / 128 samples, 8 ms hop' },
+      { label: 'Gain Rule', val: 'Log-MMSE, decision-directed &alpha;=0.98' },
       { label: 'Core Assignment', val: 'ARM Cortex-M7 Core 1' },
-      { label: 'SNR Gain', val: '+14 to +18 dB SNR' }
+      { label: 'Noise Tracking', val: 'MCRA (Cohen & Berdugo 2002)' }
     ]
   },
   radio: {
