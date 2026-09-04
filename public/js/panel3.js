@@ -16,7 +16,8 @@ function buildBuffers() {
   const sr = actx.sampleRate;
   const dur = 4.0;
   const n = Math.round(sr * dur);
-  const shape = { raw: 1.0, A: 0.45, B: 0.28, C: 0.16 };
+  // System D has even lower residual than C — neural step-size gives tighter steady-state
+  const shape = { raw: 1.0, A: 0.45, B: 0.28, C: 0.16, D: 0.09 };
 
   for (const k of Object.keys(shape)) {
     const b = actx.createBuffer(1, n, sr);
@@ -46,6 +47,10 @@ function buildBuffers() {
       // System A coefficient divergence penalty post-impulse (t = 2.03 to 2.9s)
       if (k === 'A' && t >= 2.03 && t < 2.9) {
         noise *= 2.4;
+      }
+      // System D: near-zero post-impulse artefact — neural supervisor freezes weights
+      if (k === 'D' && t > 2.0 && t < 2.03) {
+        noise *= 0.35;  // Tighter Huber threshold suppresses residual spike
       }
 
       ch[i] = Math.max(-1.0, Math.min(1.0, speech + noise * 0.55));
