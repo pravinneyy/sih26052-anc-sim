@@ -180,6 +180,22 @@ if (p9LoadDemoBtn) {
   };
 }
 
+/* ---- enhancement engine picker ---- */
+const p9EngineEl = document.getElementById('p9Engine');
+if (p9EngineEl) {
+  p9EngineEl.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    p9EngineEl.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    const isAi = b.dataset.v === 'ai';
+    const aiCtrl = document.getElementById('p9AiControls');
+    if (aiCtrl) aiCtrl.hidden = !isAi;
+    const aiRow = document.getElementById('p9MAiRow');
+    const muRow = document.getElementById('p9MAiMuRow');
+    if (aiRow) aiRow.hidden = !isAi;
+    if (muRow) muRow.hidden = !isAi;
+  });
+}
+
 /* ---- controls ---- */
 const P9_ADAPT_LABELS = ['slow', 'medium', 'fast'];
 const p9StrengthEl = document.getElementById('p9Strength');
@@ -203,28 +219,59 @@ if (p9ProcessBtn) {
   p9ProcessBtn.onclick = () => {
     if (!p9raw) return;
     p9ProcessBtn.disabled = true;
-    p9SetStatus('Processing…');
-    setTimeout(() => {
-      const opt = {
-        floorDb: +document.getElementById('p9Strength').value,
-        adapt: +document.getElementById('p9Adapt').value,
-        tsens: +document.getElementById('p9Tsens').value,
-        transAware: document.getElementById('p9SwTrans').getAttribute('aria-pressed') === 'true',
-        attenImpulse: document.getElementById('p9SwImp').getAttribute('aria-pressed') === 'true'
-      };
-      const res = enhProcess(p9raw.getChannelData(0), opt);
-      p9lastResult = res;
-      p9enh = p9ToAudioBuffer(res.out);
 
+    // Determine which engine is active
+    const engActive = p9EngineEl ? p9EngineEl.querySelector('[aria-pressed="true"]') : null;
+    const useAi = engActive && engActive.dataset.v === 'ai';
+
+    p9SetStatus(useAi ? 'AI processing…' : 'Processing…');
+    setTimeout(() => {
       const set = (id, v, dp, unit) => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = (isFinite(v) ? v.toFixed(dp) : '—') + (unit ? `<span class="u">${unit}</span>` : '');
       };
+
+      let res;
+      if (useAi) {
+        const mode = parseInt((document.getElementById('p9AiMode') || {}).value || '1', 10);
+        res = aimlEnhProcess(p9raw.getChannelData(0), {
+          mode   : mode,
+          floorDb: +document.getElementById('p9Strength').value
+        });
+      } else {
+        res = enhProcess(p9raw.getChannelData(0), {
+          floorDb    : +document.getElementById('p9Strength').value,
+          adapt      : +document.getElementById('p9Adapt').value,
+          tsens      : +document.getElementById('p9Tsens').value,
+          transAware : document.getElementById('p9SwTrans').getAttribute('aria-pressed') === 'true',
+          attenImpulse: document.getElementById('p9SwImp').getAttribute('aria-pressed') === 'true'
+        });
+      }
+
+      p9lastResult = res;
+      p9enh = p9ToAudioBuffer(res.out);
+
+      // Standard metrics
       set('p9MNoise', res.noiseRed, 1, 'dB');
       set('p9MSnr', res.snrGain, 1, 'dB');
       set('p9MKeep', res.postKeep, 1, 'dB');
       document.getElementById('p9MTrans').textContent = res.transCount;
       set('p9MTime', res.ms, 0, 'ms');
+
+      // AI-specific readouts
+      const aiRow = document.getElementById('p9MAiRow');
+      const muRow = document.getElementById('p9MAiMuRow');
+      if (useAi) {
+        if (aiRow) aiRow.hidden = false;
+        if (muRow) muRow.hidden = false;
+        const aiClassEl = document.getElementById('p9MAiClass');
+        if (aiClassEl) aiClassEl.textContent = `${AIML.CLASS_ICONS[res.aiTopClass]} ${res.aiClassName}`;
+        const aiMuEl = document.getElementById('p9MAiMu');
+        if (aiMuEl) aiMuEl.innerHTML = res.aiMuMean.toFixed(2) + '<span class="u">× nominal</span>';
+      } else {
+        if (aiRow) aiRow.hidden = true;
+        if (muRow) muRow.hidden = true;
+      }
 
       const enhBtn = document.querySelector('#p9AbRow button[data-v="enh"]');
       if (enhBtn) enhBtn.disabled = false;
@@ -383,6 +430,14 @@ function p9DrawWave() {
 function p9Reset() {
   p9StopNode();
   p9raw = null; p9enh = null; p9lastResult = null; p9offset = 0; p9cur = 'orig';
+
+  // Reset engine picker to MMSE
+  if (p9EngineEl) {
+    p9EngineEl.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === 'mmse'));
+    const aiCtrl = document.getElementById('p9AiControls'); if (aiCtrl) aiCtrl.hidden = true;
+    const aiRow = document.getElementById('p9MAiRow'); if (aiRow) aiRow.hidden = true;
+    const muRow = document.getElementById('p9MAiMuRow'); if (muRow) muRow.hidden = true;
+  }
 
   // Controls back to defaults — these were never reset before.
   const strengthEl = document.getElementById('p9Strength');

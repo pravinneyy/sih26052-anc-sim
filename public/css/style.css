@@ -31,6 +31,8 @@
   --sysA: #FF5C5C;        /* System A: Vanilla FxLMS - Coral */
   --sysB: #FFB830;        /* System B: Robust M-Estimator - Amber */
   --sysC: #00E5A3;        /* System C: State-Gated Hybrid - Emerald */
+  --sysD: #00D2FF;        /* System D: AI/ML Neural FxLMS - Cyan */
+  --sysAI: #A78BFA;       /* AI/ML Neural Engine accent - Violet */
   --accent-cyan: #00D2FF;  /* Tactical Cyan */
   --accent-blue: #3B82F6;
   --accent-purple: #A78BFA;
@@ -1270,3 +1272,130 @@ select:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 1p
 @media (prefers-reduced-motion: reduce) { .rec-on .rec-dot { animation: none; } }
 
 #p9SeekBar { cursor: pointer; }
+
+/* ---------- AI/ML ENGINE PANEL (panel 10) ---------- */
+
+/* AI status badge */
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--sysAI);
+  background: rgba(167, 139, 250, 0.12);
+  border: 1px solid rgba(167, 139, 250, 0.35);
+  padding: 3px 10px;
+  border-radius: 10px;
+}
+.ai-badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--sysAI);
+  box-shadow: 0 0 6px var(--sysAI);
+  animation: ai-pulse 2s ease-in-out infinite;
+}
+@keyframes ai-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--sysAI); }
+  50%       { opacity: 0.4; box-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) { .ai-badge::before { animation: none; } }
+
+/* Probability bar chart (Brain 1 classifier output) */
+.prob-bars { display: flex; flex-direction: column; gap: 8px; }
+
+.prob-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 44px;
+  align-items: center;
+  gap: 8px;
+}
+
+.prob-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prob-track {
+  height: 10px;
+  background: var(--bg-screen);
+  border: 1px solid var(--border-subtle);
+  border-radius: 5px;
+  overflow: hidden;
+  position: relative;
+}
+
+.prob-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.12s ease-out;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.prob-pct {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: right;
+  color: var(--text-primary);
+}
+
+/* Mode description text */
+.mode-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 10px;
+  line-height: 1.5;
+  border-left: 2px solid var(--sysAI);
+  padding-left: 10px;
+}
+
+/* Alert log row in classifier card */
+.threat-alert {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--sysA);
+  background: rgba(255, 92, 92, 0.12);
+  border: 1px solid rgba(255, 92, 92, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  margin-top: 8px;
+  animation: threat-flash 0.8s ease-in-out;
+}
+@keyframes threat-flash {
+  0% { background: rgba(255, 92, 92, 0.35); }
+  100% { background: rgba(255, 92, 92, 0.12); }
+}
+
+.siren-alert {
+  color: var(--sysAI);
+  background: rgba(167, 139, 250, 0.12);
+  border-color: rgba(167, 139, 250, 0.3);
+}
+
+/* Mel feature map canvas label overlay */
+.mel-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* System D swatch in scope legends */
+.swatch-d {
+  width: 18px; height: 0;
+  border-top-width: 3px;
+  border-top-style: solid;
+  border-top-color: var(--sysD);
+  border-radius: 2px;
+}

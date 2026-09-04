@@ -4,7 +4,7 @@
 
 const getNoise = seg('noiseType', () => runP2());
 const getPattern = seg('pattern', () => runP2());
-const sysOn = { A: true, B: true, C: true };
+const sysOn = { A: true, B: true, C: true, D: true };
 
 /* The noise realization used to be a fixed seed (3), so pressing "Fire"
    with nothing else changed reproduced pixel-identical output — which
@@ -64,11 +64,11 @@ function runP2() {
 
   const noiseType = getNoise() || 'stat';
   const x = addImpulses(genNoise(n, noiseType, p2NoiseSeed), times, amp);
-  const colors = { A: '#FF5C5C', B: '#FFB830', C: '#00E5A3' };
+  const colors = { A: '#FF5C5C', B: '#FFB830', C: '#00E5A3', D: '#00D2FF' };
   const series = [];
   const res = {};
 
-  for (const v of ['A', 'B', 'C']) {
+  for (const v of ['A', 'B', 'C', 'D']) {
     const r = runFxLMS(x, P, S, S, v, 0.005, 32);
     r.sm = smoothDb(r.e, 25);
     res[v] = r;
@@ -76,7 +76,7 @@ function runP2() {
       series.push({
         y: r.sm,
         color: colors[v],
-        w: v === 'C' ? 2.8 : 2.0
+        w: (v === 'C' || v === 'D') ? 2.8 : 2.0
       });
     }
   }
@@ -129,20 +129,30 @@ function runP2() {
   if (times.length > 0) {
     const lossA = Math.max(0, pre('A') - post('A'));
     const lossC = Math.max(0, pre('C') - post('C'));
+    const lossD = Math.max(0, pre('D') - post('D'));
     setVal('r_loss', lossA, 1);
     setVal('r_lossC', lossC, 1);
+    setVal('r_lossD', lossD, 1);
 
     const lastT = times[times.length - 1];
     const baseline = meanDbWindow(res.A.sm, Math.round(2.4 * FS), Math.round(3.4 * FS));
     const fromIdx = Math.round((lastT + 0.02) * FS);
-    const rec = recoveryMs(res.A.sm, fromIdx, baseline, 1.2, Math.round(0.05 * FS));
+    const rec  = recoveryMs(res.A.sm, fromIdx, baseline, 1.2, Math.round(0.05 * FS));
+    const recD = recoveryMs(res.D.sm, fromIdx,
+      meanDbWindow(res.D.sm, Math.round(2.4 * FS), Math.round(3.4 * FS)),
+      1.2, Math.round(0.05 * FS));
 
     const recEl = document.getElementById('r_rec');
     if (recEl) recEl.innerHTML = Math.round(rec) + '<span class="u">ms</span>';
+    const recDEl = document.getElementById('r_recD');
+    if (recDEl) recDEl.innerHTML = Math.round(recD) + '<span class="u">ms</span>';
   } else {
     setVal('r_loss', 0.0, 1);
     setVal('r_lossC', 0.0, 1);
+    setVal('r_lossD', 0.0, 1);
     const recEl = document.getElementById('r_rec');
     if (recEl) recEl.innerHTML = '0<span class="u">ms</span>';
+    const recDEl = document.getElementById('r_recD');
+    if (recDEl) recDEl.innerHTML = '0<span class="u">ms</span>';
   }
 }

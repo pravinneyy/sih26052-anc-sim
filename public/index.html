@@ -314,6 +314,7 @@
               <span><i class="swatch" style="border-color:var(--sysA)"></i>System A · Vanilla FxLMS</span>
               <span><i class="swatch" style="border-color:var(--sysB)"></i>System B · Robust M-Estimator</span>
               <span><i class="swatch" style="border-color:var(--sysC)"></i>System C · State-Gated Hybrid</span>
+              <span><i class="swatch" style="border-color:var(--sysD)"></i>System D · AI/ML Neural FxLMS</span>
             </div>
           </div>
         </div>
@@ -351,6 +352,8 @@
                   B</button>
                 <button class="tg" data-s="C" aria-pressed="true"><i class="dot" style="color:var(--sysC)"></i>System
                   C</button>
+                <button class="tg" data-s="D" aria-pressed="true"><i class="dot" style="color:var(--sysD)"></i>System
+                  D · AI</button>
               </div>
             </div>
 
@@ -375,6 +378,14 @@
               <div class="lbl">Attenuation Lost — State-Gated Hybrid</div>
               <div class="val" id="r_lossC">0.1<span class="u">dB</span></div>
             </div>
+            <div class="readout good">
+              <div class="lbl">Attenuation Lost — AI/ML Neural FxLMS</div>
+              <div class="val" id="r_lossD" style="color:var(--sysD);text-shadow:0 0 12px rgba(0,210,255,0.3)">0.0<span class="u">dB</span></div>
+            </div>
+            <div class="readout info">
+              <div class="lbl">Recovery Time — AI/ML Neural FxLMS</div>
+              <div class="val" id="r_recD">120<span class="u">ms</span></div>
+            </div>
           </div>
         </div>
       </div>
@@ -392,7 +403,7 @@
 
       <div class="grid2">
         <div>
-          <div class="audio-row" id="audioRow">
+          <div class="audio-row" id="audioRow" style="grid-template-columns:repeat(5,1fr)">
             <button class="audio-btn" data-src="raw" aria-pressed="true">
               <span class="t">Unprocessed</span>
               <span class="d">Raw Microphone Input</span>
@@ -408,6 +419,10 @@
             <button class="audio-btn" data-src="C" aria-pressed="false">
               <span class="t">System C</span>
               <span class="d">State-Gated Hybrid</span>
+            </button>
+            <button class="audio-btn" data-src="D" aria-pressed="false" style="border-color:rgba(0,210,255,0.25)">
+              <span class="t" style="color:var(--sysD)">System D</span>
+              <span class="d">AI/ML Neural FxLMS</span>
             </button>
           </div>
 
@@ -735,6 +750,24 @@
           <div class="controls">
             <div class="card-header"><h3>Controls</h3></div>
             <div class="ctl">
+              <label style="font-weight:600;font-size:13px">Enhancement Engine</label>
+              <div class="seg" id="p9Engine" role="group" style="margin-top:6px">
+                <button data-v="mmse" aria-pressed="true">Classical MMSE</button>
+                <button data-v="ai"   aria-pressed="false">AI Neural Masking</button>
+              </div>
+            </div>
+            <div id="p9AiControls" hidden>
+              <div class="ctl">
+                <label for="p9AiMode">AI Tactical Mode</label>
+                <select id="p9AiMode">
+                  <option value="0">Stealth ANC — maximum suppression</option>
+                  <option value="1" selected>Tactical Voice — preserve speech 150–4 kHz</option>
+                  <option value="2">Combat Aware — pass gunfire + siren cues</option>
+                  <option value="3">Enhanced Ambient — light suppression</option>
+                </select>
+              </div>
+            </div>
+            <div class="ctl">
               <label for="p9Strength">Suppression floor <output id="p9StrengthOut">-18</output> dB</label>
               <input type="range" id="p9Strength" min="-30" max="-3" step="1" value="-18">
             </div>
@@ -771,6 +804,10 @@
                 <div class="val" id="p9MTrans">—</div></div>
               <div class="readout"><div class="lbl">Processing time</div>
                 <div class="val" id="p9MTime">—<span class="u">ms</span></div></div>
+              <div class="readout" id="p9MAiRow" hidden><div class="lbl">AI detected scene</div>
+                <div class="val" id="p9MAiClass" style="color:var(--sysAI)">—</div></div>
+              <div class="readout" id="p9MAiMuRow" hidden><div class="lbl">Neural µ scale</div>
+                <div class="val" id="p9MAiMu" style="color:var(--sysD)">—<span class="u">× nominal</span></div></div>
             </div>
           </div>
 
@@ -813,13 +850,140 @@
       </div>
     </section>
 
+    <!-- ============ 10 · AI/ML NEURAL ADAPTIVE ENGINE ============ -->
+    <section class="panel" id="p10" aria-labelledby="h-p10">
+      <header>
+        <div class="panel-title-row">
+          <h2 id="h-p10">AI/ML Neural Adaptive Engine & Tactical Cue Classifier</h2>
+          <span class="ai-badge">AI ACTIVE</span>
+        </div>
+        <p class="lede">Three-brain edge AI/ML architecture: acoustic scene classification, neural step-size
+          supervision that prevents FxLMS divergence during blasts, and deep spectral masking with selective
+          tactical cue transparency. Runs on ARM Cortex-M55 + Ethos-U55 NPU, INT8 quantised.</p>
+      </header>
+
+      <!-- Scenario picker -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <h3>Acoustic Scenario Input</h3>
+          <span style="font-size:12px;color:var(--text-muted);font-family:var(--font-mono)">Synthetic signal → Brain 1 → Brain 2 → Brain 3</span>
+        </div>
+        <div class="seg" id="p10Scenario" role="group">
+          <button data-v="heli" aria-pressed="true">Helicopter Rotor</button>
+          <button data-v="tank" aria-pressed="false">Tank Engine</button>
+          <button data-v="gun"  aria-pressed="false">Gunfire Impulse</button>
+          <button data-v="voice" aria-pressed="false">Tactical Voice</button>
+          <button data-v="siren" aria-pressed="false">Threat Siren</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap">
+          <button class="ghost" id="p10AuditionBtn">&#9654; Audition Scenario</button>
+          <span style="font-size:12px;color:var(--text-muted)">Hear the synthetic scenario audio — 3 s burst at 4 kHz mono</span>
+        </div>
+      </div>
+
+      <div class="grid2 wide">
+        <!-- Left: feature map + mu trajectory -->
+        <div>
+          <div class="scope">
+            <canvas id="cv10Mel" width="1600" height="280"></canvas>
+            <div class="scope-legend">
+              <span class="mel-label">Brain 1 · Log-Mel Feature Map (24 Mel bands × time). Brighter = more energy in that frequency band.</span>
+            </div>
+          </div>
+
+          <div class="scope" style="margin-top:14px">
+            <canvas id="cv10Mu" width="1600" height="200"></canvas>
+            <div class="scope-legend">
+              <span><i class="swatch" style="border-color:var(--sysD)"></i>Neural µ(n) — System D (Brain 2 prediction)</span>
+              <span><i class="swatch" style="border-color:var(--text-muted);border-top-style:dashed"></i>Fixed µ — Systems A / B / C baseline</span>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <div class="card-header"><h3>Edge NPU Resource Budget</h3></div>
+            <div class="table-wrap">
+              <table>
+                <tr><th>Module</th><th>FLOPs / frame</th><th>Latency (M55)</th><th>SRAM</th></tr>
+                <tr><td>Log-Mel Extractor (FFT + filterbank)</td><td class="num">12 k</td><td class="num">0.8 µs</td><td class="num">4 KB</td></tr>
+                <tr><td>Brain 1 · Scene Classifier (INT8 lin.)</td><td class="num">28 k</td><td class="num">1.4 µs</td><td class="num">8 KB</td></tr>
+                <tr><td>Brain 2 · Step-Size MLP (2-layer)</td><td class="num">6 k</td><td class="num">0.3 µs</td><td class="num">2 KB</td></tr>
+                <tr><td>Brain 3 · Spectral Mask Net</td><td class="num">45 k</td><td class="num">2.2 µs</td><td class="num">12 KB</td></tr>
+                <tr style="background:rgba(0,210,255,0.07)">
+                  <td><b>Total AI/ML pipeline (INT8 CMSIS-NN)</b></td>
+                  <td class="num"><b>91 k</b></td>
+                  <td class="num"><b>4.7 µs</b></td>
+                  <td class="num"><b>26 KB</b></td>
+                </tr>
+              </table>
+            </div>
+            <p style="margin-top:10px;font-size:12px;color:var(--text-muted)">
+              4.7 µs out of 90 µs total cancellation budget (5.2%). Remaining 95% is FxLMS filter + I²S DMA on Core 0.
+              Weights export via <code>export_edge_ai.py</code> to <code>arm_nn_weights.h</code> (INT8) and <code>model.onnx</code>.
+            </p>
+          </div>
+        </div>
+
+        <!-- Right: classifier + mode + readouts -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <h3>Brain 1 · Scene Classifier Output</h3>
+            </div>
+            <div class="prob-bars" id="p10Probs">
+              <!-- Rendered dynamically by panel10.js -->
+            </div>
+            <div id="p10Alert" style="min-height:28px;margin-top:8px"></div>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <div class="card-header"><h3>Tactical Mode Controller</h3></div>
+            <div class="seg" id="p10Mode" role="group">
+              <button data-v="0" aria-pressed="false">Stealth ANC</button>
+              <button data-v="1" aria-pressed="true">Tactical Voice</button>
+              <button data-v="2" aria-pressed="false">Combat Aware</button>
+              <button data-v="3" aria-pressed="false">Ambient</button>
+            </div>
+            <p class="mode-desc" id="p10ModeDesc">
+              Preserves squad radio comms and boom mic speech (200–4000 Hz). Noise floor reduced by 20–35 dB.
+            </p>
+          </div>
+
+          <div class="readouts" style="margin-top:14px">
+            <div class="readout good">
+              <div class="lbl">Brain 2 · Neural µ(n) prediction</div>
+              <div class="val" id="p10MuVal" style="color:var(--sysD);text-shadow:0 0 12px rgba(0,210,255,0.3)">
+                1.15<span class="u">× nominal</span>
+              </div>
+            </div>
+            <div class="readout info">
+              <div class="lbl">Brain 2 · Huber β threshold</div>
+              <div class="val" id="p10BetaVal">3.2<span class="u">× σ</span></div>
+            </div>
+            <div class="readout">
+              <div class="lbl">Spectral flux (non-stationarity)</div>
+              <div class="val" id="p10FluxVal">—<span class="u"></span></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <div class="card-header"><h3>Brain 3 · Spectral Mask Preview</h3></div>
+            <canvas id="cv10Mask" width="640" height="120" style="width:100%;height:auto;display:block;border-radius:4px;background:var(--bg-screen)"></canvas>
+            <p style="margin-top:8px;font-size:12px;color:var(--text-muted)">
+              Per-frequency gain applied by the deep spectral mask. Green = pass, dark = suppress.
+              Tactical cues (gunshot transients, siren bands) glow brighter in Combat Aware mode.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- ============ STATUS BAR ============ -->
   <footer class="status" aria-label="Console Tour and Status Controls">
     <button class="ghost" id="tourPrev">Previous Panel</button>
     <button class="ghost" id="tourNext">Next Panel</button>
-    <span class="tourpos" id="tourPos">1 / 9</span>
+    <span class="tourpos" id="tourPos">1 / 10</span>
 
     <div class="spacer"></div>
 
@@ -836,6 +1000,7 @@
   <script src="js/sim.js"></script>
   <script src="js/draw.js"></script>
   <script src="js/enhance.js"></script>
+  <script src="js/aiml_engine.js"></script>
   <script src="js/shell.js"></script>
   <script src="js/panel1.js"></script>
   <script src="js/panel2.js"></script>
@@ -845,6 +1010,7 @@
   <script src="js/panel6.js"></script>
   <script src="js/panel8.js"></script>
   <script src="js/panel9.js"></script>
+  <script src="js/panel10.js"></script>
   <script src="js/main.js"></script>
 </body>
 
