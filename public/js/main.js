@@ -64,10 +64,6 @@ function resetPanel() {
   if (panelId === 'p9') {
     if (typeof p9Reset === 'function') p9Reset();
   }
-
-  if (panelId === 'p10') {
-    if (typeof p10Reset === 'function') p10Reset();
-  }
 }
 
 const resetAllBtn = document.getElementById('resetAll');
@@ -83,7 +79,6 @@ function redraw() {
   if (panelId === 'p5' && typeof runP5 === 'function') runP5();
   if (panelId === 'p6' && typeof runP6 === 'function') runP6();
   if (panelId === 'p8' && typeof runP8 === 'function') runP8();
-  if (panelId === 'p10' && typeof p10Start === 'function') p10Start();
 }
 
 // Debounce window resize

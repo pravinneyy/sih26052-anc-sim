@@ -11,8 +11,7 @@ const PANELS = [
   ['Secondary-Path Stability Sweep', 'p5'],
   ['Adaptive LMS Filter Tuning', 'p6'],
   ['Subband Speech Enhancement', 'p8'],
-  ['Interactive Audio Lab', 'p9'],
-  ['AI/ML Neural Adaptive Engine', 'p10']
+  ['Interactive Audio Lab', 'p9']
 ];
 
 let cur = 0;
@@ -54,9 +53,6 @@ function show(i) {
   // Close mobile drawer if open
   const rail = document.querySelector('.rail');
   if (rail) rail.classList.remove('mobile-open');
-
-  // Stop Panel 10 animation when leaving it
-  if (typeof p10Stop === 'function') p10Stop();
 
   // Trigger chart redraw on active panel
   if (typeof redraw === 'function') {
