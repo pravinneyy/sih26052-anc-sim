@@ -31,6 +31,8 @@
   --sysA: #FF5C5C;        /* System A: Vanilla FxLMS - Coral */
   --sysB: #FFB830;        /* System B: Robust M-Estimator - Amber */
   --sysC: #00E5A3;        /* System C: State-Gated Hybrid - Emerald */
+  --sysD: #00D2FF;        /* System D: AI/ML Neural FxLMS - Tactical Cyan */
+  --sysAI: #A78BFA;       /* Edge AI Neural Coprocessor - Violet */
   --accent-cyan: #00D2FF;  /* Tactical Cyan */
   --accent-blue: #3B82F6;
   --accent-purple: #A78BFA;
@@ -1226,3 +1228,163 @@ td.mono {
     gap: 8px;
   }
 }
+
+/* ---------- NOTE CALLOUTS (panel 9) ---------- */
+.note {
+  border-left: 3px solid var(--accent-cyan);
+  background: rgba(0, 210, 255, 0.06);
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 14px 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.note b { color: var(--text-primary); font-weight: 600; }
+.note.warn {
+  border-left-color: var(--sysB);
+  background: rgba(255, 184, 48, 0.07);
+}
+
+/* ---------- SELECT (panel 9 demo picker) ---------- */
+select {
+  background: var(--bg-screen);
+  color: var(--text-primary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  cursor: pointer;
+}
+select:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 1px; }
+
+/* ---------- 3-column source picker (panel 9) ---------- */
+.audio-row.n3 { grid-template-columns: repeat(3, 1fr); }
+
+/* ---------- recording indicator: functional state feedback, not
+   decoration — the dot only pulses while a recording is actually live ---------- */
+.rec-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--sysA); display: inline-block; margin-right: 8px;
+}
+.rec-on .rec-dot { animation: enh-pulse 1s infinite; }
+@keyframes enh-pulse { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .rec-on .rec-dot { animation: none; } }
+
+#p9SeekBar { cursor: pointer; }
+
+/* ---------- PANEL 10: AI/ML NEURAL ADAPTIVE ENGINE & CUE CLASSIFIER ---------- */
+.v-seg {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: transparent;
+  padding: 0;
+  border: none;
+}
+.v-seg button {
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+.v-seg button:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+.v-seg button[aria-pressed="true"] {
+  background: rgba(0, 210, 255, 0.12);
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  font-weight: 600;
+  box-shadow: 0 0 12px rgba(0, 210, 255, 0.15);
+}
+
+.ai-radar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ai-class-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--bg-primary);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.2s ease;
+}
+.ai-class-bar.dominant {
+  border-color: rgba(0, 210, 255, 0.4);
+  background: rgba(0, 210, 255, 0.05);
+}
+.ai-class-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+.ai-class-header .num {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.threat-log-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.threat-log-item {
+  display: grid;
+  grid-template-columns: 50px 1.4fr 2fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bg-primary);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 12px;
+}
+.threat-time {
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.threat-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.threat-action {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+.badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+}
+.badge.good {
+  background: rgba(16, 185, 129, 0.18);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+.badge.bad {
+  background: rgba(239, 68, 68, 0.18);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+

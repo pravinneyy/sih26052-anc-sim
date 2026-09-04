@@ -4,3 +4,8 @@ node_modules/
 .DS_Store
 Thumbs.db
 .claude/
+.vscode/
+sih26052-anc-sim-pravin/
+__pycache__/
+*.pyc
+

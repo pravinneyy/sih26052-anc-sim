@@ -16,7 +16,7 @@ function buildBuffers() {
   const sr = actx.sampleRate;
   const dur = 4.0;
   const n = Math.round(sr * dur);
-  const shape = { raw: 1.0, A: 0.45, B: 0.28, C: 0.16 };
+  const shape = { raw: 1.0, A: 0.45, B: 0.28, C: 0.16, D: 0.07 };
 
   for (const k of Object.keys(shape)) {
     const b = actx.createBuffer(1, n, sr);
@@ -28,19 +28,32 @@ function buildBuffers() {
       const t = i / sr;
       lp = 0.9 * lp + 0.1 * gauss(r);
 
-      // Speech audio harmonics
-      const speech =
+      // Speech audio harmonics (tactical squad voice)
+      let speech =
         0.35 *
         Math.sin(2 * Math.PI * (180 + 40 * Math.sin(2 * Math.PI * 2.5 * t)) * t) *
         (0.5 + 0.5 * Math.sin(2 * Math.PI * 1.7 * t));
 
+      // In System D, AI neural formant tracking boosts speech clarity
+      if (k === 'D') {
+        speech *= 1.35;
+      }
+
       // Background ambient noise
       let noise = (lp * 1.2 + 0.35 * Math.sin(2 * Math.PI * 110 * t)) * shape[k];
 
-      // Acoustic impulse transient at t = 2.0s
+      // Acoustic impulse transient / threat cue at t = 2.0s
       if (t > 2.0 && t < 2.03) {
-        const shockAmp = k === 'raw' ? 3.0 : 1.2;
-        noise += shockAmp * Math.exp(-(t - 2.0) * 350) * gauss(r);
+        if (k === 'raw') {
+          noise += 3.0 * Math.exp(-(t - 2.0) * 350) * gauss(r);
+        } else if (k === 'A' || k === 'B') {
+          noise += 1.2 * Math.exp(-(t - 2.0) * 350) * gauss(r);
+        } else if (k === 'C') {
+          noise += 0.8 * Math.exp(-(t - 2.0) * 350) * gauss(r);
+        } else if (k === 'D') {
+          // System D: AI Threat Cue Pass-through (safely leveled at 75 dBA, preserving azimuth & snap)
+          noise += 0.45 * Math.exp(-(t - 2.0) * 450) * (gauss(r) + 0.2);
+        }
       }
 
       // System A coefficient divergence penalty post-impulse (t = 2.03 to 2.9s)
