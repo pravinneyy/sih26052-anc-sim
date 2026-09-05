@@ -18,17 +18,19 @@ The project features a **Dual-Lane Signal Processing Architecture**:
 5. **Secondary Path Mismatch**: Secondary-path model error stability sweep (0% to 40%).
 6. **Live Adaptive Filter Simulator**: Interactive parameter tuning for step size $\mu$ and filter tap length $L$.
 7. **Subband Speech Enhancement**: Spectral subband mask gain visualization across Bark frequency bands.
-8. **Interactive Audio Lab**: Microphone recording and audio file upload lab for live spectral mask processing.
+8. **Live Audio Lab**: Continuous, real-time enhancement — microphone (or a file/demo clip played through the same path) run live through the trained CRN/GRU neural model, with enhanced audio audible within a couple of chunks. No record-then-process step.
 
 ## Running the Console
 
 **Directly in any Browser (No install required, works 100% offline):**
 
-Open `public/index.html` in a web browser.
+Open `public/index.html` in a web browser. Every panel works this way **except** panel 8's live neural engine —
+browsers block a `file://` page from loading the ONNX model, so that panel needs the dev server below.
 
-**Optional Dev Server:**
+**Dev Server (required for the Live Audio Lab's neural engine):**
 
 ```bash
+npm install
 npm start   # Runs Express server at http://localhost:3000
 ```
 
@@ -40,3 +42,18 @@ npm start   # Runs Express server at http://localhost:3000
   - `←` / `→` arrow keys: Switch panels
   - `R`: Reset active panel parameters
   - `Space`: Trigger impulse event (Panel 2)
+
+## AI/ML Voice Enhancement Pipeline
+
+The project includes a compact CRN/GRU training and batch-inference path in `sih_python/`:
+
+- `ml_audio_model.py`: Tiny CRN/GRU mask model with noise-class, VAD, and impulse heads.
+- `train_crn_gru_voice_mask.py`: trains on clean speech mixed with MAD/noise datasets.
+- `batch_enhance_crn_gru.py`: enhances a requested number of operator audio files and reports stationary / non-stationary / impulsive predictions.
+- `CRN_GRU_AUDIO_ML.md`: dataset layout and commands.
+
+Quick batch command after training:
+
+```bash
+python sih_python/batch_enhance_crn_gru.py --checkpoint models/crn_gru_voice_mask.pt --input-dir incoming_audio --max-files 25
+```

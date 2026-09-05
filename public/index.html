@@ -660,35 +660,31 @@
     <section class="panel" id="p9" aria-labelledby="h-p9">
       <header>
         <div class="panel-title-row">
-          <h2 id="h-p9">Interactive Audio Processing Lab</h2>
+          <h2 id="h-p9">Live Audio Processing Lab</h2>
         </div>
-        <p class="lede">Record or upload speech recorded in noise, run it through the enhancement engine, and compare
-          the two by ear. This is the single-channel half of the architecture — the half that runs on the boom
-          microphone and feeds the radio.</p>
+        <p class="lede">Speak into the mic — or play a file or built-in clip through the same path — and the trained
+          SIH26052 CRN/GRU model enhances it continuously, live, with the result audible within a couple of chunks.
+          This is the single-channel half of the architecture — the half that runs on the boom microphone and
+          feeds the radio.</p>
       </header>
 
       <div class="note warn"><b>What this lab is not.</b> FxLMS cancellation needs a reference mic, an error mic and
-        a speaker in a physical loop — a recorded file has none of those, so it can't be demonstrated here. What
-        runs below is the enhancement path: log-MMSE spectral suppression with a transient-aware controller, which
-        is where "maintaining high speech intelligibility" actually lives.</div>
+        a speaker in a physical loop, so it can't be demonstrated here even live. What runs below is the
+        enhancement path: a causal neural mask running frame-by-frame on the live signal, which is where
+        "maintaining high speech intelligibility" actually lives. <b>Use headphones for the microphone source</b> —
+        enhanced audio plays back immediately, and speakers next to an open mic will feed back.</div>
 
       <div class="grid2 wide">
         <div>
           <div class="card">
-            <div class="card-header"><h3>1 · Choose your audio</h3></div>
+            <div class="card-header"><h3>1 · Live source</h3></div>
             <div class="audio-row n3" id="p9SrcPick">
               <button class="audio-btn" data-k="mic" aria-pressed="true">
-                <span class="t">Record</span><span class="d">use your microphone</span></button>
+                <span class="t">Microphone</span><span class="d">live, continuous</span></button>
               <button class="audio-btn" data-k="file" aria-pressed="false">
                 <span class="t">Upload</span><span class="d">wav, mp3, m4a, ogg</span></button>
               <button class="audio-btn" data-k="demo" aria-pressed="false">
                 <span class="t">Built-in clip</span><span class="d">no mic needed</span></button>
-            </div>
-
-            <div id="p9PaneMic" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
-              <button class="ghost" id="p9Record"><span class="rec-dot"></span>Start recording</button>
-              <span style="font-family:var(--font-mono);font-size:13px;color:var(--text-secondary)" id="p9RecTime">0.0s</span>
-              <span style="font-size:13px;color:var(--text-muted)" id="p9RecHint">Speak while something noisy runs nearby.</span>
             </div>
 
             <div id="p9PaneFile" hidden>
@@ -702,45 +698,44 @@
                 <option value="imp">Speech with impulsive events — gunshot-like</option>
                 <option value="all">All three combined</option>
               </select>
-              <button class="ghost" id="p9LoadDemo">Load clip</button>
             </div>
 
             <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:16px">
-              <button class="primary" id="p9Process" disabled>Process audio</button>
-              <span style="font-size:13px;color:var(--text-secondary)" id="p9Status">No audio loaded</span>
+              <button class="primary" id="p9LiveBtn"><span class="rec-dot"></span>Start live enhancement</button>
+              <span style="font-size:13px;color:var(--text-secondary)" id="p9Status">Neural engine idle</span>
             </div>
           </div>
 
           <div class="card">
-            <div class="card-header"><h3>2 · Compare</h3></div>
+            <div class="card-header"><h3>2 · Monitor</h3></div>
             <div class="seg" id="p9AbRow" role="group" style="margin-bottom:14px">
-              <button data-v="orig" aria-pressed="true">Original</button>
-              <button data-v="enh" aria-pressed="false" disabled>Enhanced</button>
+              <button data-v="raw" aria-pressed="false">Raw input</button>
+              <button data-v="enh" aria-pressed="true">Enhanced</button>
             </div>
             <div class="transport">
-              <button class="ghost" id="p9PlayBtn" disabled style="min-width:96px">Play</button>
-              <div class="bar" id="p9SeekBar"><i id="p9PlayBar"></i></div>
-              <span class="transport-time" id="p9PlayTime">0.0 / 0.0s</span>
+              <button class="ghost" id="p9RecOutBtn" disabled>Capture enhanced audio</button>
+              <span class="transport-time" id="p9LiveTime">0.0s</span>
               <button class="ghost" id="p9DlBtn" disabled>Download wav</button>
             </div>
-            <div class="note">Switching between Original and Enhanced does not restart playback — you hear the
-              same instant processed both ways. That comparison is the point of the lab.</div>
+            <div class="note">Flip Raw/Enhanced while the stream is running — both are computed every chunk, this
+              switch just picks which one reaches your speakers. "Capture enhanced audio" records the Enhanced
+              output from the moment you press it so you can download it afterwards.</div>
           </div>
 
           <div class="card">
-            <div class="card-header"><h3>3 · What changed</h3></div>
+            <div class="card-header"><h3>3 · What's happening now</h3></div>
             <div class="scope">
               <canvas id="cv9Spec" width="1800" height="440"></canvas>
               <div class="scope-legend">
-                <span style="color:var(--text-muted);font-family:var(--font-mono);font-size:12px">spectrogram — original above, enhanced below</span>
+                <span style="color:var(--text-muted);font-family:var(--font-mono);font-size:12px">live spectrogram — raw input above, enhanced below, scrolling</span>
               </div>
             </div>
             <div class="scope" style="margin-top:12px">
               <canvas id="cv9Wave" width="1800" height="220"></canvas>
               <div class="scope-legend">
-                <span><i class="swatch" style="border-color:var(--sysB)"></i>original</span>
+                <span><i class="swatch" style="border-color:var(--sysB)"></i>raw input</span>
                 <span><i class="swatch" style="border-color:var(--sysC)"></i>enhanced</span>
-                <span><i class="swatch" style="border-color:var(--sysA)"></i>detected transient</span>
+                <span><i class="swatch" style="border-color:var(--sysA)"></i>impulse detected</span>
               </div>
             </div>
           </div>
@@ -750,75 +745,57 @@
           <div class="controls">
             <div class="card-header"><h3>Controls</h3></div>
             <div class="ctl">
-              <label style="font-weight:600;font-size:13px">Enhancement Engine</label>
-              <div class="seg" id="p9Engine" role="group" style="margin-top:6px">
-                <button data-v="mmse" aria-pressed="true">Classical MMSE</button>
-                <button data-v="ai"   aria-pressed="false">AI Neural Masking</button>
-              </div>
-            </div>
-            <div id="p9AiControls" hidden>
-              <div class="ctl">
-                <label for="p9AiMode">AI Tactical Mode</label>
-                <select id="p9AiMode">
-                  <option value="0">Stealth ANC — maximum suppression</option>
-                  <option value="1" selected>Tactical Voice — preserve speech 150–4 kHz</option>
-                  <option value="2">Combat Aware — pass gunfire + siren cues</option>
-                  <option value="3">Enhanced Ambient — light suppression</option>
-                </select>
-              </div>
+              <label style="font-weight:600;font-size:13px">Enhancement engine</label>
+              <p style="font-size:13px;color:var(--text-secondary);margin:4px 0 0">SIH26052 Tiny CRN/GRU neural
+                mask — causal convolutional front end + GRU, streamed with persisted hidden state (see
+                <code>sih_python/CRN_GRU_AUDIO_ML.md</code>).</p>
             </div>
             <div class="ctl">
               <label for="p9Strength">Suppression floor <output id="p9StrengthOut">-18</output> dB</label>
               <input type="range" id="p9Strength" min="-30" max="-3" step="1" value="-18">
             </div>
             <div class="ctl">
-              <label for="p9Adapt">Noise tracking speed <output id="p9AdaptOut">medium</output></label>
-              <input type="range" id="p9Adapt" min="0" max="2" step="1" value="1">
-            </div>
-            <div class="ctl">
-              <label for="p9Tsens">Transient sensitivity <output id="p9TsensOut">6.0</output></label>
-              <input type="range" id="p9Tsens" min="2" max="14" step="0.5" value="6">
-            </div>
-            <div class="ctl">
-              <div class="toggles">
-                <button class="tg" id="p9SwTrans" aria-pressed="true">Transient-aware control</button>
-              </div>
+              <label for="p9ImpulseDb">Impulse attenuation <output id="p9ImpulseDbOut">-24</output> dB</label>
+              <input type="range" id="p9ImpulseDb" min="-36" max="0" step="1" value="-24">
             </div>
             <div class="ctl" style="margin-bottom:0">
               <div class="toggles">
-                <button class="tg" id="p9SwImp" aria-pressed="true">Attenuate impulses on the radio path</button>
+                <button class="tg" id="p9SwFastPrior" aria-pressed="true">Fast causal impulse prior</button>
               </div>
             </div>
           </div>
 
           <div class="card" style="margin-top:14px">
-            <div class="card-header"><h3>Measured</h3></div>
+            <div class="card-header"><h3>Measured — live</h3></div>
             <div class="readouts">
               <div class="readout good"><div class="lbl">Noise floor reduction</div>
                 <div class="val" id="p9MNoise">—<span class="u">dB</span></div></div>
               <div class="readout good"><div class="lbl">Estimated SNR gain</div>
                 <div class="val" id="p9MSnr">—<span class="u">dB</span></div></div>
-              <div class="readout"><div class="lbl">Speech kept after impulse</div>
-                <div class="val" id="p9MKeep">—<span class="u">dB</span></div></div>
-              <div class="readout"><div class="lbl">Transients detected</div>
-                <div class="val" id="p9MTrans">—</div></div>
-              <div class="readout"><div class="lbl">Processing time</div>
-                <div class="val" id="p9MTime">—<span class="u">ms</span></div></div>
-              <div class="readout" id="p9MAiRow" hidden><div class="lbl">AI detected scene</div>
-                <div class="val" id="p9MAiClass" style="color:var(--sysAI)">—</div></div>
-              <div class="readout" id="p9MAiMuRow" hidden><div class="lbl">Neural µ scale</div>
-                <div class="val" id="p9MAiMu" style="color:var(--sysD)">—<span class="u">× nominal</span></div></div>
+              <div class="readout"><div class="lbl">Detected noise class</div>
+                <div class="val" id="p9MClass" style="color:var(--sysAI)">—</div></div>
+              <div class="readout"><div class="lbl">Voice activity</div>
+                <div class="val" id="p9MVad">—<span class="u">%</span></div></div>
+              <div class="readout"><div class="lbl">Impulse probability</div>
+                <div class="val" id="p9MImpulse">—<span class="u">%</span></div></div>
+              <div class="readout"><div class="lbl">Impulse events</div>
+                <div class="val" id="p9MEvents">—</div></div>
+              <div class="readout"><div class="lbl">Inference time / chunk</div>
+                <div class="val" id="p9MInfer">—<span class="u">ms</span></div></div>
+              <div class="readout"><div class="lbl">Added latency</div>
+                <div class="val" id="p9MLatency">—<span class="u">ms</span></div></div>
             </div>
           </div>
 
           <div class="card" style="margin-top:14px">
             <div class="card-header"><h3>What to demonstrate</h3></div>
-            <p>Load the impulsive clip and process it. Then turn the two switches off one at a time and process
-              again — they do different jobs, and the measurements below say so.</p>
-            <p><b>Impulse attenuation</b> is the loud win. You hear it immediately.</p>
-            <p><b>Freezing the noise estimate</b> is the subtle one. It gives up a little raw suppression to keep
-              more speech in the half-second after each impulse — the words that would otherwise be eaten.
-              Intelligibility, not loudness. Same trade-off shape as the finding on the cancellation path.</p>
+            <p>Start live enhancement on the mic, speak, then flip Raw/Enhanced back and forth without stopping —
+              the noise floor drop is audible instantly on the switch.</p>
+            <p>Switch the source to the built-in impulsive clip and watch <b>Impulse probability</b> and
+              <b>Impulse events</b> react in real time as gunshot-like transients arrive — that's the model's own
+              impulse head plus the fast causal energy-ratio prior firing together.</p>
+            <p>Turning off <b>Fast causal impulse prior</b> shows the neural model's impulse detection alone —
+              usually a little slower to react than the two combined.</p>
           </div>
 
           <div class="card" style="margin-top:14px">
@@ -827,24 +804,22 @@
               <tr><th>Rate</th><td>16 kHz, mono</td></tr>
               <tr><th>Frame</th><td>512 samples, 32 ms</td></tr>
               <tr><th>Hop</th><td>128 samples, 8 ms, 75% overlap</td></tr>
-              <tr><th>Window</th><td>Square-root Hann, WOLA</td></tr>
-              <tr><th>Noise estimate</th><td>Minima-controlled recursive averaging</td></tr>
-              <tr><th>A priori SNR</th><td>Decision-directed, &#945; = 0.98</td></tr>
-              <tr><th>Gain rule</th><td>Log-MMSE spectral amplitude</td></tr>
-              <tr><th>Transient control</th><td>Energy ratio + spectral flux, freezes noise estimate</td></tr>
+              <tr><th>Window</th><td>Hann, WOLA (matches training's torch.stft/istft)</td></tr>
+              <tr><th>Model</th><td>Causal CRN (3 conv layers) + 1-layer GRU (96 units)</td></tr>
+              <tr><th>Streaming chunk</th><td>8 new frames (64 ms) per inference call</td></tr>
+              <tr><th>Recurrent state</th><td>GRU hidden state persisted across chunks</td></tr>
+              <tr><th>Impulse handling</th><td>Neural impulse head + causal energy-ratio prior (max of the two)</td></tr>
             </table>
           </div>
 
           <div class="card" style="margin-top:14px">
-            <div class="card-header"><h3>Method sources</h3></div>
-            <p style="font-size:13px">Ephraim &amp; Malah (1984), MMSE short-time spectral amplitude estimator and
-              the decision-directed a priori SNR. <i>IEEE Trans. ASSP</i> 32(6), 1109&ndash;1121.</p>
-            <p style="font-size:13px">Ephraim &amp; Malah (1985), log-spectral amplitude estimator. <i>IEEE Trans.
-              ASSP</i> 33(2), 443&ndash;445.</p>
-            <p style="font-size:13px">Cohen &amp; Berdugo (2002), noise estimation by minima controlled recursive
-              averaging. <i>IEEE Signal Processing Letters</i> 9(1), 12&ndash;15.</p>
-            <p style="font-size:13px">Martin (2001), noise PSD estimation by optimal smoothing and minimum
-              statistics. <i>IEEE Trans. Speech Audio Process.</i> 9(5), 504&ndash;512.</p>
+            <div class="card-header"><h3>Method notes</h3></div>
+            <p style="font-size:13px">The model, training recipe and offline batch path are documented in
+              <code>sih_python/CRN_GRU_AUDIO_ML.md</code>. This live engine runs the same trained checkpoint,
+              re-exported with the GRU hidden state exposed
+              (<code>sih_python/export_streaming_onnx.py</code>) so the browser can call it one small chunk at a
+              time instead of only on a whole pre-recorded clip — see that script's docstring for exactly how the
+              hidden state and the causal convolutions' receptive field are carried across chunks.</p>
           </div>
         </div>
       </div>
@@ -873,7 +848,8 @@
   <script src="js/sim.js"></script>
   <script src="js/draw.js"></script>
   <script src="js/enhance.js"></script>
-  <script src="js/aiml_engine.js"></script>
+  <script src="/vendor/onnxruntime-web/ort.wasm.min.js"></script>
+  <script src="js/rt_engine.js"></script>
   <script src="js/shell.js"></script>
   <script src="js/panel1.js"></script>
   <script src="js/panel2.js"></script>
