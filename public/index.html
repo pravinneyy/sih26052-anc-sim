@@ -155,34 +155,6 @@
             <!-- Dynamic Subsystem Details rendered by panel1.js -->
           </div>
 
-          <div class="card" style="margin-top:16px">
-            <div class="card-header">
-              <h3>Analog Latency Budget Breakdown</h3>
-            </div>
-            <div class="latbar">
-              <div class="lr">
-                <span>48 kHz Active Cancellation Path</span>
-                <span class="num">88.5 µs / 90.0 µs</span>
-              </div>
-              <div class="track">
-                <div class="fill" style="width:7.4%"></div>
-              </div>
-            </div>
-            <div class="latbar">
-              <div class="lr">
-                <span>16 kHz Speech Enhancement Path</span>
-                <span class="num">12.0 ms / 15.0 ms</span>
-              </div>
-              <div class="track">
-                <div class="fill c" style="width:100%"></div>
-              </div>
-            </div>
-            <p style="margin-top:12px;font-size:12px;color:var(--text-secondary)">
-              Sound propagates across 3.0 cm of earcup airgap in ~88 µs. Our Cortex-M7 Core 0 executes the entire ADC
-              &rarr; DMA &rarr; FxLMS filter &rarr; DAC cycle in &lt;88.5 µs, guaranteeing zero acoustic phase
-              distortion.
-            </p>
-          </div>
         </div>
       </div>
     </section>
@@ -668,10 +640,7 @@
           feeds the radio.</p>
       </header>
 
-      <div class="note warn"><b>What this lab is not.</b> FxLMS cancellation needs a reference mic, an error mic and
-        a speaker in a physical loop, so it can't be demonstrated here even live. What runs below is the
-        enhancement path: a causal neural mask running frame-by-frame on the live signal, which is where
-        "maintaining high speech intelligibility" actually lives. <b>Use headphones for the microphone source</b> —
+      <div class="note warn"><b>Use headphones for the microphone source</b> —
         enhanced audio plays back immediately, and speakers next to an open mic will feed back.</div>
 
       <div class="grid2 wide">
@@ -744,12 +713,6 @@
         <div>
           <div class="controls">
             <div class="card-header"><h3>Controls</h3></div>
-            <div class="ctl">
-              <label style="font-weight:600;font-size:13px">Enhancement engine</label>
-              <p style="font-size:13px;color:var(--text-secondary);margin:4px 0 0">SIH26052 Tiny CRN/GRU neural
-                mask — causal convolutional front end + GRU, streamed with persisted hidden state (see
-                <code>sih_python/CRN_GRU_AUDIO_ML.md</code>).</p>
-            </div>
             <div class="ctl">
               <label for="p9Strength">Suppression floor <output id="p9StrengthOut">-18</output> dB</label>
               <input type="range" id="p9Strength" min="-30" max="-3" step="1" value="-18">
