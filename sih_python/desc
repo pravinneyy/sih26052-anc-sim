@@ -1,0 +1,55 @@
+"""
+fxlms_anc_sim.py
+
+Standalone Python reimplementation of the browser demo's FxLMS active-noise-
+control core (sim.js), reworked for offline study instead of real-time
+browser playback:
+
+  * 48 kHz sample rate instead of the browser's 4 kHz. Every sample-domain
+    constant from sim.js (filter lengths, path delays, decay time constants,
+    smoothing-filter poles, warm-up/hold windows) is rescaled to preserve
+    its original *physical* duration at the new rate -- see scale_len() /
+    scale_pole() below. Frequencies expressed in Hz are untouched, since
+    they're already sample-rate independent.
+  * A realistic adaptive-filter length (default 384 taps @ 48 kHz = 8 ms,
+    the same physical span as sim.js's 32 taps @ 4 kHz -- override with
+    --taps for a longer/shorter control filter).
+  * Swept across 6 independently-drawn (primary, secondary) acoustic path
+    pairs instead of the browser's single fixed path, so results are
+    reported as a mean +/- spread across paths rather than one draw.
+
+Algorithm, unchanged from sim.js:
+  - FxLMS feed-forward canceller using a fixed secondary-path *estimate*
+    Shat (deliberately mismatched from the true secondary path S, like a
+    real system would be).
+  - An energy-ratio impulse detector with a warm-up period, so it doesn't
+    trip on its own un-converged background estimate at startup.
+  - Three adaptation variants:
+      A: vanilla LMS, no robustness.
+      B: robust (Geman-McClure-style) error weighting, always on.
+      C: robust weighting + step-size cut, but ONLY while the detector is
+         tripped or holding -- so C should track A during quiet periods
+         and only pay the "robustness tax" during impulsive events.
+
+Normalization modes (--norm):
+  - 'leaky' (sim.js-faithful): the power normalizer pnorm is a leaky average
+    with a ~250 ms time constant (rescaled from sim.js's 0.999 pole), capped
+    to move at most 4x per sample. This is exactly what the browser demo
+    does. It is deliberately conservative -- at a realistic 384-tap filter,
+    stability requires mu as small as ~2e-5, which makes the whole loop
+    adapt slowly (recovery-time metrics can fail to settle within a several-
+    second trace).
+  - 'instant' (textbook NLMS, default here): pnorm is just the current
+    window's reference power, no leak. This is the standard NLMS
+    normalization. Raw stability ceiling is mu~0.005 at 384 taps, but the
+    hardest of the 6 default paths only has real margin below ~7e-4 (the
+    default) -- still roughly 30x larger than the leaky mode's mu, so
+    roughly 30x faster adaptation, at the cost of losing sim.js's extra
+    smoothing safeguard against a single impulse briefly hijacking the
+    normalizer.
+
+Usage:
+    python3 fxlms_anc_sim.py                      # default sweep, prints a table
+    python3 fxlms_anc_sim.py --taps 512 --paths 6 --duration 5 --csv out.csv
+    python3 fxlms_anc_sim.py --norm leaky --mu 2e-5   # reproduce sim.js's own normalizer
+"""

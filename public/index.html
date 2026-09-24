@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIH26052 — Adaptive Noise Cancellation & Hardware Architecture Console</title>
+  <meta name="description"
+    content="Dual-lane hard real-time active noise cancellation and causal subband speech enhancement architecture with hardware specifications and interactive simulation console.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <!-- ============ MOBILE HEADER ============ -->
+  <header class="mobile-header">
+    <button id="menuToggle" class="menu-btn" aria-label="Toggle navigation drawer">
+      <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+    <div class="mobile-title">
+      <span>SIH26052 · ANC Console</span>
+      <span class="mobile-badge">48 kHz DSP</span>
+    </div>
+  </header>
+
+  <!-- ============ SIDEBAR RAIL ============ -->
+  <nav class="rail" aria-label="Main Navigation">
+    <div class="rail-brand">
+      <div class="rail-badge-row">
+        <span class="rail-tag">SIH26052</span>
+      </div>
+      <h1>Adaptive Noise Cancellation</h1>
+      <p class="sub">Hardware Architecture & Digital Signal Processing Simulation Console</p>
+    </div>
+
+    <div class="rail-nav-section-title">Navigation Modules</div>
+    <ol id="nav"></ol>
+  </nav>
+
+  <!-- ============ MAIN CONTENT AREA ============ -->
+  <main>
+
+    <!-- ============ 1 · SOLUTION ARCHITECTURE & HARDWARE ============ -->
+    <section class="panel on" id="p1" aria-labelledby="h-p1">
+      <header>
+        <div class="panel-title-row">
+          <h2 id="h-p1">Solution Architecture</h2>
+        </div>
+        <p class="lede">Dual-lane hybrid tactical architecture partitioning hard real-time 48 kHz active noise
+          cancellation (&lt;90 µs latency budget) on Core 0 and 16 kHz causal subband speech enhancement (12 ms latency
+          budget) on Core 1.</p>
+      </header>
+
+      <div class="grid2 wide">
+        <div class="diagram">
+          <div class="card-header">
+            <h3>Interactive Dual-Lane Signal Flow</h3>
+          </div>
+          <svg viewBox="0 0 720 320" role="img" aria-label="Dual-lane DSP system architecture diagram: a 48 kHz cancellation lane and a 16 kHz enhancement lane, gated by a shared state detector between them">
+            <defs>
+              <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M2 1L8 5L2 9" fill="none" stroke="#64748B" stroke-width="1.5" />
+              </marker>
+            </defs>
+
+            <!-- Lane 1: 48 kHz cancellation. Extra top padding inside the
+                 panel gives the error-feedback arc room without crossing
+                 anything. -->
+            <rect class="lanePanel" x="16" y="20" width="688" height="108" rx="12" />
+
+            <g class="blk" data-info="ref">
+              <rect x="32" y="60" width="135" height="52" rx="4" />
+              <text x="99" y="82" text-anchor="middle">Reference Mic Array</text>
+              <text class="s" x="99" y="100" text-anchor="middle">Knowles MEMS · SNR 65dB</text>
+            </g>
+
+            <g class="blk" data-info="fxlms" data-sel="true">
+              <rect x="197" y="60" width="175" height="52" rx="4" />
+              <text x="285" y="82" text-anchor="middle">Robust NFxLMS Engine</text>
+              <text class="s" x="285" y="100" text-anchor="middle">Cortex-M7 Core 0 · µ(n)</text>
+            </g>
+
+            <g class="blk" data-info="spk">
+              <rect x="402" y="60" width="145" height="52" rx="4" />
+              <text x="475" y="82" text-anchor="middle">Earcup Actuator</text>
+              <text class="s" x="475" y="100" text-anchor="middle">40mm Dynamic Driver</text>
+            </g>
+
+            <g class="blk" data-info="err">
+              <rect x="577" y="60" width="90" height="52" rx="4" />
+              <text x="622" y="82" text-anchor="middle">Error Mic</text>
+              <text class="s" x="622" y="100" text-anchor="middle">Internal Concha</text>
+            </g>
+
+            <path class="dgLine" d="M167 86 H195" marker-end="url(#ar)" />
+            <path class="dgLine" d="M372 86 H400" marker-end="url(#ar)" />
+            <path class="dgLine" d="M547 86 H575" marker-end="url(#ar)" />
+
+            <!-- Error feedback e(n): arcs above the box row, enters the
+                 filter from the top so it never shares an entry point with
+                 the forward signal (left) or the detector's gating line
+                 (bottom). -->
+            <path class="dgLine feedback" d="M622 60 V38 H285 V60" marker-end="url(#ar)" />
+            <text class="dgFlowLabel" x="454" y="33" text-anchor="middle">error feedback e(n)</text>
+
+            <!-- Shared state detector: same neutral block style as everything
+                 else, told apart only by its dashed outline — it's a
+                 supervisory element, not part of either signal chain. -->
+            <g class="blk detBlk" data-info="det">
+              <rect x="190" y="148" width="190" height="48" rx="4" />
+              <text x="285" y="168" text-anchor="middle">Shared State Detector</text>
+              <text class="s" x="285" y="184" text-anchor="middle">Energy Ratio Ef/Eb · Supervisor</text>
+            </g>
+            <path class="dgLine control" d="M99 112 V172 H188" marker-end="url(#ar)" />
+            <path class="dgLine control" d="M285 148 V112" marker-end="url(#ar)" />
+            <path class="dgLine control" d="M285 196 V232" marker-end="url(#ar)" />
+
+            <!-- Lane 2: 16 kHz enhancement -->
+            <rect class="lanePanel" x="16" y="216" width="688" height="84" rx="12" />
+
+            <g class="blk" data-info="boom">
+              <rect x="32" y="232" width="135" height="52" rx="4" />
+              <text x="99" y="254" text-anchor="middle">Differential Boom Mic</text>
+              <text class="s" x="99" y="272" text-anchor="middle">Target Speech Input</text>
+            </g>
+
+            <g class="blk" data-info="nn">
+              <rect x="197" y="232" width="175" height="52" rx="4" />
+              <text x="285" y="254" text-anchor="middle">Subband Mask Engine</text>
+              <text class="s" x="285" y="272" text-anchor="middle">Cortex-M7 Core 1 · Bark</text>
+            </g>
+
+            <g class="blk" data-info="radio">
+              <rect x="402" y="232" width="145" height="52" rx="4" />
+              <text x="475" y="254" text-anchor="middle">Tactical Radio Line</text>
+              <text class="s" x="475" y="272" text-anchor="middle">Enhanced Speech Output</text>
+            </g>
+
+            <path class="dgLine" d="M167 258 H195" marker-end="url(#ar)" />
+            <path class="dgLine" d="M372 258 H400" marker-end="url(#ar)" />
+          </svg>
+        </div>
+
+        <div>
+          <div class="card" id="blockInfo">
+            <!-- Dynamic Subsystem Details rendered by panel1.js -->
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HARDWARE & BOM ============ -->
+    <section class="panel" id="phw" aria-labelledby="h-phw">
+      <header>
+        <div class="panel-title-row">
+          <h2 id="h-phw">Hardware & Bill of Materials</h2>
+        </div>
+        <p class="lede">Embedded platform specifications and per-unit production cost for the ARM Cortex-M7 dual-core
+          tactical ANC headset.</p>
+      </header>
+
+      <div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header">
+              <h3>System On Chip & DSP Specifications</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <tr>
+                  <th>Subsystem</th>
+                  <th>Hardware Specification</th>
+                </tr>
+                <tr>
+                  <td><b>Primary MCU</b></td>
+                  <td>ARM Cortex-M7 @ 480 MHz (STM32H753VI / Daisy Seed Core)</td>
+                </tr>
+                <tr>
+                  <td><b>FPU / SIMD</b></td>
+                  <td>Hardware Double-Precision FPU with DSP instruction set</td>
+                </tr>
+                <tr>
+                  <td><b>Memory Topology</b></td>
+                  <td>2 MB Dual-Bank Flash, 1 MB SRAM (AXI Bus Matrix + 128KB DTCM)</td>
+                </tr>
+                <tr>
+                  <td><b>Audio Codecs</b></td>
+                  <td>Dual Cirrus / Wolfson WM8960 24-bit / 192 kHz Low-Latency I2S</td>
+                </tr>
+                <tr>
+                  <td><b>Reference Mics</b></td>
+                  <td>Dual Knowles SPU0410LR5H-QB MEMS (SNR 65 dBA, AOP 130 dBSPL)</td>
+                </tr>
+                <tr>
+                  <td><b>Error Mic</b></td>
+                  <td>Internal Concha MEMS with calibrated flat response (20Hz–8kHz)</td>
+                </tr>
+                <tr>
+                  <td><b>Speaker Driver</b></td>
+                  <td>40mm Neodymium Dynamic Transducer + MAX98357A Class-D Amp</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>Production Bill of Materials (Per Unit)</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <tr>
+                  <th>Component</th>
+                  <th>Part Description</th>
+                  <th style="text-align:right;">Cost (INR)</th>
+                </tr>
+                <tr>
+                  <td><b>MCU Board</b></td>
+                  <td>STM32H7 Core Board @ 480MHz, 2MB Flash</td>
+                  <td style="text-align:right;" class="num">₹3,200</td>
+                </tr>
+                <tr>
+                  <td><b>Audio Codecs</b></td>
+                  <td>Dual WM8960 Low-Latency I2S Codec Modules</td>
+                  <td style="text-align:right;" class="num">₹1,800</td>
+                </tr>
+                <tr>
+                  <td><b>Microphones</b></td>
+                  <td>3x Knowles MEMS (2x Ref + 1x Error)</td>
+                  <td style="text-align:right;" class="num">₹1,200</td>
+                </tr>
+                <tr>
+                  <td><b>Boom Mic</b></td>
+                  <td>Differential Noise-Canceling Electret Capsule</td>
+                  <td style="text-align:right;" class="num">₹1,500</td>
+                </tr>
+                <tr>
+                  <td><b>Acoustic Shell</b></td>
+                  <td>40mm Driver Transducers + Tactical Earcup Shell</td>
+                  <td style="text-align:right;" class="num">₹4,500</td>
+                </tr>
+                <tr>
+                  <td><b>Power & PMIC</b></td>
+                  <td>LiPo Battery + Ultra-Low Noise LDO Regulators</td>
+                  <td style="text-align:right;" class="num">₹1,100</td>
+                </tr>
+                <tr style="background:rgba(0, 229, 163, 0.08);">
+                  <td><b>Total Unit Cost</b></td>
+                  <td><b>Complete Tactical ANC Headset</b></td>
+                  <td style="text-align:right;" class="num" style="color:var(--sysC);font-weight:700;"><b>₹13,300</b>
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 2 · IMPULSE EXPERIMENT ============ -->
+    <section class="panel" id="p2" aria-labelledby="h-p2">
+      <header>
+        <div class="panel-title-row">
+          <h2 id="h-p2">Impulse Response & Controller Performance Comparison</h2>
+        </div>
+        <p class="lede">Evaluate system stability during high-energy acoustic transients. Robust FxLMS with M-estimation
+          and state-gated adaptation prevents coefficient divergence and maintains continuous anti-noise attenuation.
+        </p>
+      </header>
+
+      <div class="grid2">
+        <div>
+          <div class="scope">
+            <canvas id="cv2" width="1600" height="620"></canvas>
+            <div class="scope-legend">
+              <span><i class="swatch" style="border-color:var(--sysA)"></i>System A · Vanilla FxLMS</span>
+              <span><i class="swatch" style="border-color:var(--sysB)"></i>System B · Robust M-Estimator</span>
+              <span><i class="swatch" style="border-color:var(--sysC)"></i>System C · State-Gated Hybrid</span>
+              <span><i class="swatch" style="border-color:var(--sysD)"></i>System D · AI/ML Neural FxLMS</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="controls">
+            <div class="ctl">
+              <label>Background Noise Environment</label>
+              <div class="seg" id="noiseType" role="group">
+                <button data-v="stat" aria-pressed="true">Stationary Cockpit</button>
+                <button data-v="nonstat" aria-pressed="false">Non-Stationary Engine</button>
+              </div>
+            </div>
+
+            <div class="ctl">
+              <label for="amp">Impulse Amplitude <output id="ampOut">400</output></label>
+              <input type="range" id="amp" min="0" max="1500" step="50" value="400">
+            </div>
+
+            <div class="ctl">
+              <label>Impulse Pattern</label>
+              <div class="seg" id="pattern" role="group">
+                <button data-v="single" aria-pressed="true">Single Shock</button>
+                <button data-v="burst" aria-pressed="false">Gunfire Burst ×8</button>
+                <button data-v="none" aria-pressed="false">Steady State</button>
+              </div>
+            </div>
+
+            <div class="ctl">
+              <label>Systems Displayed</label>
+              <div class="toggles" id="sysToggles">
+                <button class="tg" data-s="A" aria-pressed="true"><i class="dot" style="color:var(--sysA)"></i>System
+                  A</button>
+                <button class="tg" data-s="B" aria-pressed="true"><i class="dot" style="color:var(--sysB)"></i>System
+                  B</button>
+                <button class="tg" data-s="C" aria-pressed="true"><i class="dot" style="color:var(--sysC)"></i>System
+                  C</button>
+                <button class="tg" data-s="D" aria-pressed="true"><i class="dot" style="color:var(--sysD)"></i>System
+                  D · AI</button>
+              </div>
+            </div>
+
+            <button class="primary" id="fire">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+              Trigger Acoustic Transient
+            </button>
+          </div>
+
+          <div class="readouts" style="margin-top:14px">
+            <div class="readout bad">
+              <div class="lbl">Attenuation Lost — Vanilla FxLMS</div>
+              <div class="val" id="r_loss">7.0<span class="u">dB</span></div>
+            </div>
+            <div class="readout bad">
+              <div class="lbl">Recovery Time — Vanilla FxLMS</div>
+              <div class="val" id="r_rec">1200<span class="u">ms</span></div>
+            </div>
+            <div class="readout good">
+              <div class="lbl">Attenuation Lost — State-Gated Hybrid</div>
+              <div class="val" id="r_lossC">0.1<span class="u">dB</span></div>
+            </div>
+            <div class="readout good">
+              <div class="lbl">Attenuation Lost — AI/ML Neural FxLMS</div>
+              <div class="val" id="r_lossD" style="color:var(--sysD);text-shadow:0 0 12px rgba(0,210,255,0.3)">0.0<span class="u">dB</span></div>
+            </div>
+            <div class="readout info">
+              <div class="lbl">Recovery Time — AI/ML Neural FxLMS</div>
+              <div class="val" id="r_recD">120<span class="u">ms</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 3 · LISTEN ============ -->
+    <section class="panel" id="p3" aria-labelledby="h-p3">
+      <header>
+        <div class="panel-title-row">
+          <h2 id="h-p3">Acoustic Demonstration & Listening Console</h2>
+        </div>
+        <p class="lede">Compare live synthesized acoustic audio streams. Seamless transport allows real-time switching
+          between unprocessed audio and candidate ANC controllers while maintaining playback position.</p>
+      </header>
+
+      <div class="grid2">
+        <div>
+          <div class="audio-row" id="audioRow" style="grid-template-columns:repeat(5,1fr)">
+            <button class="audio-btn" data-src="raw" aria-pressed="true">
+              <span class="t">Unprocessed</span>
+              <span class="d">Raw Microphone Input</span>
+            </button>
+            <button class="audio-btn" data-src="A" aria-pressed="false">
+              <span class="t">System A</span>
+              <span class="d">Vanilla FxLMS</span>
+            </button>
+            <button class="audio-btn" data-src="B" aria-pressed="false">
+              <span class="t">System B</span>
+              <span class="d">Robust Baseline</span>
+            </button>
+            <button class="audio-btn" data-src="C" aria-pressed="false">
+              <span class="t">System C</span>
+              <span class="d">State-Gated Hybrid</span>
+            </button>
+            <button class="audio-btn" data-src="D" aria-pressed="false" style="border-color:rgba(0,210,255,0.25)">
+              <span class="t" style="color:var(--sysD)">System D</span>
+              <span class="d">AI/ML Neural FxLMS</span>
+            </button>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>Live Audio Transport Player</h3>
+            </div>
+            <div class="transport">
+              <button class="ghost" id="playBtn" style="min-width:96px">Play</button>
+              <div class="bar"><i id="playBar"></i></div>
+              <span class="transport-time" id="playTime">0.0s</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Acoustic Verification Context</h3>
+          </div>
+          <p>Audio playback incorporates mid-sentence acoustic transients at t = 2.0 s. System A suffers
+            audible filter degradation during transient recovery, whereas System C maintains stable anti-noise
+            attenuation without glitching.</p>
+          <p>Recommended to evaluate using stereo headphones for accurate low-frequency cancellation performance.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 4 · DETECTOR ============ -->
+    <section class="panel" id="p4" aria-labelledby="h-p4">
+      <header>
+        <div class="panel-title-row">
+          <h2 id="h-p4">Transient Detector & State Classifier</h2>
+        </div>
+        <p class="lede">Analyzes short-term vs long-term energy ratios (Ef / Eb) to distinguish true high-energy
+          acoustic transients from loud vocal speech.</p>
+      </header>
+
+      <div class="grid2">
+        <div>
+          <div class="scope">
+            <canvas id="cv4" width="1600" height="520"></canvas>
+            <div class="scope-legend">
+              <span><i class="swatch" style="border-color:#00D2FF"></i>Short-Term Energy Ratio Ef / Eb</span>
+              <span><i class="swatch" style="border-color:#FF5C5C;border-top-style:dashed"></i>Detection
+                Threshold</span>
+              <span><i class="swatch" style="border-color:#00E5A3"></i>Active Protection Gating</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="controls">
+            <div class="ctl">
+              <label>Acoustic Test Scenario</label>
+              <div class="seg" id="detScenario" role="group">
+                <button data-v="imp" aria-pressed="true">Impulse Transients</button>
+                <button data-v="shout" aria-pressed="false">Loud Speech Bursts</button>
+              </div>
+            </div>
+
+            <div class="ctl">
+              <label for="thr">Detection Threshold <output id="thrOut">4.0</output></label>
+              <input type="range" id="thr" min="1.5" max="10" step="0.1" value="4.0">
+            </div>
+          </div>
+
+          <div class="readouts" style="margin-top:14px">
+            <div class="readout good">
+              <div class="lbl">Detection Probability P<sub>d</sub></div>
+              <div class="val" id="r_pd">100<span class="u">%</span></div>
+            </div>
+            <div class="readout info">
+              <div class="lbl">False Alarm Rate P<sub>fa</sub></div>
+              <div class="val" id="r_pfa">0.0<span class="u">/min</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 5 · MISMATCH ============ -->
+    <section class="panel" id="p5" aria-labelledby="h-p5">
+      <header>
+        <div class="panel-title-row">
+          <h2 id="h-p5">Secondary-Path Acoustic Mismatch Sweep</h2>
+        </div>
+        <p class="lede">Evaluates system stability boundaries under acoustic transfer function errors resulting from
+          earcup displacement, seal slippage, or physiological variation.</p>
+      </header>
+
+      <div class="grid2">
+        <div>
+          <div class="scope">
+            <canvas id="cv5" width="1600" height="520"></canvas>
+            <div class="scope-legend">
+              <span><i class="swatch" style="border-color:var(--sysA)"></i>System A</span>
+              <span><i class="swatch" style="border-color:var(--sysB)"></i>System B</span>
+              <span><i class="swatch" style="border-color:var(--sysC)"></i>System C</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="controls">
+            <div class="ctl">
+              <label for="mm">Secondary-Path Model Error <output id="mmOut">0</output>%</label>
+              <input type="range" id="mm" min="0" max="240" step="10" value="0">
+            </div>
+            <button class="primary" id="runSweep">Execute Stability Sweep</button>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <div class="card-header">
+              <h3>Stability boundary</h3>
+            </div>
+            <div class="readouts">
+              <div class="readout"><div class="lbl">System A — vanilla</div>
+                <div class="val" id="r_boundA">—<span class="u">%</span></div></div>
+              <div class="readout"><div class="lbl">System B — robust</div>
+                <div class="val" id="r_boundB">—<span class="u">%</span></div></div>
+              <div class="readout good"><div class="lbl">System C — state-gated</div>
+                <div class="val" id="r_boundC">—<span class="u">%</span></div></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <div class="card-header">
+              <h3>Secondary-Path Robustness</h3>
+            </div>
+            <p>Physical earcup shifts introduce phase and gain variations into the secondary acoustic path S(z).
+              All three systems tolerate substantial model error before attenuation collapses — the stability
+              boundary above is where each one's measured attenuation crosses zero.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 6 · LIVE FILTER ============ -->
+    <section class="panel" id="p6" aria-labelledby="h-p6">
+      <header>
+        <div class="panel-title-row">
+          <h2 id="h-p6">Real-Time Adaptive LMS Filter Simulator</h2>
+        </div>
+        <p class="lede">Interactive real-time parameter tuning for step size µ and filter tap length L.
+          Demonstrates convergence speed vs stability divergence boundaries.</p>
+      </header>
+
+      <div class="grid2">
+        <div>
+          <div class="scope">
+            <canvas id="cv6" width="1600" height="520"></canvas>
+            <div class="scope-legend">
+              <span><i class="swatch" style="border-color:#00D2FF"></i>Residual Noise Error (dB)</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="controls">
+            <div class="ctl">
+              <label for="mu">Step Size µ <output id="muOut">0.005</output></label>
+              <input type="range" id="mu" min="1" max="60" step="1" value="5">
+            </div>
+
+            <div class="ctl">
+              <label for="taps">Filter Tap Length <output id="tapsOut">32</output> Taps</label>
+              <input type="range" id="taps" min="8" max="96" step="8" value="32">
+            </div>
+
+            <button class="ghost" id="resetLive" style="width:100%">Reset to Nominal Parameters</button>
+          </div>
+
+          <div class="readouts" style="margin-top:14px">
+            <div class="readout info">
+              <div class="lbl">Steady-State Attenuation</div>
+              <div class="val" id="r_live">18.4<span class="u">dB</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 7 (p8) · SUBBAND SPEECH ENHANCEMENT ============ -->
+    <section class="panel" id="p8" aria-labelledby="h-p8">
+      <header>
+        <div class="panel-title-row">
+          <h2 id="h-p8">Speech Enhancement Preview</h2>
+        </div>
+        <p class="lede">A fixed demo clip run through the same log-MMSE enhancement engine as panel 9 — a quick look
+          before you try it on your own audio.</p>
+      </header>
+
+      <div class="grid2">
+        <div>
+          <div class="scope">
+            <canvas id="cv8" width="1600" height="300"></canvas>
+            <div class="scope-legend">
+              <span><i class="swatch" style="border-color:var(--sysB)"></i>original</span>
+              <span><i class="swatch" style="border-color:var(--sysC)"></i>enhanced</span>
+              <span><i class="swatch" style="border-color:var(--sysA)"></i>detected transient</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="controls">
+            <div class="ctl">
+              <label>Audio Stream Select</label>
+              <div class="seg" id="enhSrc" role="group">
+                <button data-v="raw" aria-pressed="true">Boom Mic (Raw Input)</button>
+                <button data-v="enh" aria-pressed="false">Enhanced Output</button>
+              </div>
+            </div>
+
+            <div class="transport" style="margin-top:12px">
+              <button class="ghost" id="playBtn8" style="min-width:96px">Play</button>
+              <div class="bar"><i id="playBar8"></i></div>
+              <span class="transport-time" id="playTime8">0.0s</span>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <div class="card-header">
+              <h3>Same engine as panel 9</h3>
+            </div>
+            <p>Ephraim &amp; Malah log-MMSE spectral suppression with minima-controlled noise tracking, gated by a
+              transient detector that freezes the noise estimate during a detected impulse. A published, classical
+              algorithm — not a trained model. Full detail and your own audio: panel 9.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 8 (p9) · INTERACTIVE AUDIO LAB ============ -->
+    <section class="panel" id="p9" aria-labelledby="h-p9">
+      <header>
+        <div class="panel-title-row">
+          <h2 id="h-p9">Live Audio Processing Lab</h2>
+        </div>
+        <p class="lede">Speak into the mic — or play a file or built-in clip through the same path — and the trained
+          SIH26052 CRN/GRU model enhances it continuously, live, with the result audible within a couple of chunks.
+          This is the single-channel half of the architecture — the half that runs on the boom microphone and
+          feeds the radio.</p>
+      </header>
+
+      <div class="note warn"><b>Use headphones for the microphone source</b> —
+        enhanced audio plays back immediately, and speakers next to an open mic will feed back.</div>
+
+      <div class="grid2 wide">
+        <div>
+          <div class="card">
+            <div class="card-header"><h3>1 · Live source</h3></div>
+            <div class="audio-row n3" id="p9SrcPick">
+              <button class="audio-btn" data-k="mic" aria-pressed="true">
+                <span class="t">Microphone</span><span class="d">live, continuous</span></button>
+              <button class="audio-btn" data-k="file" aria-pressed="false">
+                <span class="t">Upload</span><span class="d">wav, mp3, m4a, ogg</span></button>
+              <button class="audio-btn" data-k="demo" aria-pressed="false">
+                <span class="t">Built-in clip</span><span class="d">no mic needed</span></button>
+            </div>
+
+            <div id="p9PaneFile" hidden>
+              <input type="file" id="p9File" accept="audio/*">
+            </div>
+
+            <div id="p9PaneDemo" hidden style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <select id="p9DemoPick">
+                <option value="stat">Speech in engine noise — stationary</option>
+                <option value="nonstat">Speech in varying engine noise — non-stationary</option>
+                <option value="imp">Speech with impulsive events — gunshot-like</option>
+                <option value="all">All three combined</option>
+              </select>
+            </div>
+
+            <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:16px">
+              <button class="primary" id="p9LiveBtn"><span class="rec-dot"></span>Start live enhancement</button>
+              <span style="font-size:13px;color:var(--text-secondary)" id="p9Status">Neural engine idle</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3>2 · Monitor</h3></div>
+            <div class="seg" id="p9AbRow" role="group" style="margin-bottom:14px">
+              <button data-v="raw" aria-pressed="false">Raw input</button>
+              <button data-v="enh" aria-pressed="true">Enhanced</button>
+            </div>
+            <div class="transport">
+              <button class="ghost" id="p9RecOutBtn" disabled>Capture enhanced audio</button>
+              <span class="transport-time" id="p9LiveTime">0.0s</span>
+              <button class="ghost" id="p9DlBtn" disabled>Download wav</button>
+            </div>
+            <div class="note">Flip Raw/Enhanced while the stream is running — both are computed every chunk, this
+              switch just picks which one reaches your speakers. "Capture enhanced audio" records the Enhanced
+              output from the moment you press it so you can download it afterwards.</div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3>3 · What's happening now</h3></div>
+            <div class="scope">
+              <canvas id="cv9Spec" width="1800" height="440"></canvas>
+              <div class="scope-legend">
+                <span style="color:var(--text-muted);font-family:var(--font-mono);font-size:12px">live spectrogram — raw input above, enhanced below, scrolling</span>
+              </div>
+            </div>
+            <div class="scope" style="margin-top:12px">
+              <canvas id="cv9Wave" width="1800" height="220"></canvas>
+              <div class="scope-legend">
+                <span><i class="swatch" style="border-color:var(--sysB)"></i>raw input</span>
+                <span><i class="swatch" style="border-color:var(--sysC)"></i>enhanced</span>
+                <span><i class="swatch" style="border-color:var(--sysA)"></i>impulse detected</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="controls">
+            <div class="card-header"><h3>Controls</h3></div>
+            <div class="ctl">
+              <label for="p9Strength">Suppression floor <output id="p9StrengthOut">-18</output> dB</label>
+              <input type="range" id="p9Strength" min="-30" max="-3" step="1" value="-18">
+            </div>
+            <div class="ctl">
+              <label for="p9ImpulseDb">Impulse attenuation <output id="p9ImpulseDbOut">-24</output> dB</label>
+              <input type="range" id="p9ImpulseDb" min="-36" max="0" step="1" value="-24">
+            </div>
+            <div class="ctl" style="margin-bottom:0">
+              <div class="toggles">
+                <button class="tg" id="p9SwFastPrior" aria-pressed="true">Fast causal impulse prior</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <div class="card-header"><h3>Measured — live</h3></div>
+            <div class="readouts">
+              <div class="readout good"><div class="lbl">Noise floor reduction</div>
+                <div class="val" id="p9MNoise">—<span class="u">dB</span></div></div>
+              <div class="readout good"><div class="lbl">Estimated SNR gain</div>
+                <div class="val" id="p9MSnr">—<span class="u">dB</span></div></div>
+              <div class="readout"><div class="lbl">Detected noise class</div>
+                <div class="val" id="p9MClass" style="color:var(--sysAI)">—</div></div>
+              <div class="readout"><div class="lbl">Voice activity</div>
+                <div class="val" id="p9MVad">—<span class="u">%</span></div></div>
+              <div class="readout"><div class="lbl">Impulse probability</div>
+                <div class="val" id="p9MImpulse">—<span class="u">%</span></div></div>
+              <div class="readout"><div class="lbl">Impulse events</div>
+                <div class="val" id="p9MEvents">—</div></div>
+              <div class="readout"><div class="lbl">Inference time / chunk</div>
+                <div class="val" id="p9MInfer">—<span class="u">ms</span></div></div>
+              <div class="readout"><div class="lbl">Added latency</div>
+                <div class="val" id="p9MLatency">—<span class="u">ms</span></div></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <div class="card-header"><h3>What to demonstrate</h3></div>
+            <p>Start live enhancement on the mic, speak, then flip Raw/Enhanced back and forth without stopping —
+              the noise floor drop is audible instantly on the switch.</p>
+            <p>Switch the source to the built-in impulsive clip and watch <b>Impulse probability</b> and
+              <b>Impulse events</b> react in real time as gunshot-like transients arrive — that's the model's own
+              impulse head plus the fast causal energy-ratio prior firing together.</p>
+            <p>Turning off <b>Fast causal impulse prior</b> shows the neural model's impulse detection alone —
+              usually a little slower to react than the two combined.</p>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <div class="card-header"><h3>Signal chain</h3></div>
+            <table>
+              <tr><th>Rate</th><td>16 kHz, mono</td></tr>
+              <tr><th>Frame</th><td>512 samples, 32 ms</td></tr>
+              <tr><th>Hop</th><td>128 samples, 8 ms, 75% overlap</td></tr>
+              <tr><th>Window</th><td>Hann, WOLA (matches training's torch.stft/istft)</td></tr>
+              <tr><th>Model</th><td>Causal CRN (3 conv layers) + 1-layer GRU (96 units)</td></tr>
+              <tr><th>Streaming chunk</th><td>8 new frames (64 ms) per inference call</td></tr>
+              <tr><th>Recurrent state</th><td>GRU hidden state persisted across chunks</td></tr>
+              <tr><th>Impulse handling</th><td>Neural impulse head + causal energy-ratio prior (max of the two)</td></tr>
+            </table>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <div class="card-header"><h3>Method notes</h3></div>
+            <p style="font-size:13px">The model, training recipe and offline batch path are documented in
+              <code>sih_python/CRN_GRU_AUDIO_ML.md</code>. This live engine runs the same trained checkpoint,
+              re-exported with the GRU hidden state exposed
+              (<code>sih_python/export_streaming_onnx.py</code>) so the browser can call it one small chunk at a
+              time instead of only on a whole pre-recorded clip — see that script's docstring for exactly how the
+              hidden state and the causal convolutions' receptive field are carried across chunks.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ STATUS BAR ============ -->
+  <footer class="status" aria-label="Console Tour and Status Controls">
+    <button class="ghost" id="tourPrev">Previous Panel</button>
+    <button class="ghost" id="tourNext">Next Panel</button>
+    <span class="tourpos" id="tourPos">1 / 9</span>
+
+    <div class="spacer"></div>
+
+    <button class="ghost" id="resetAll">Reset Panel Parameters</button>
+
+    <span class="shortcuts-hint" style="color:var(--text-muted);font-size:12px">
+      <kbd>←</kbd> <kbd>→</kbd> Navigate &nbsp;
+      <kbd>R</kbd> Reset &nbsp;
+      <kbd>Space</kbd> Trigger
+    </span>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/sim.js"></script>
+  <script src="js/draw.js"></script>
+  <script src="js/enhance.js"></script>
+  <script src="/vendor/onnxruntime-web/ort.wasm.min.js"></script>
+  <script src="js/rt_engine.js"></script>
+  <script src="js/shell.js"></script>
+  <script src="js/panel1.js"></script>
+  <script src="js/panel2.js"></script>
+  <script src="js/panel3.js"></script>
+  <script src="js/panel4.js"></script>
+  <script src="js/panel5.js"></script>
+  <script src="js/panel6.js"></script>
+  <script src="js/panel8.js"></script>
+  <script src="js/panel9.js"></script>
+  <script src="js/main.js"></script>
+</body>
+
+</html>

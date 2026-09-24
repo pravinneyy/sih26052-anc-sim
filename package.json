@@ -1,0 +1,15 @@
+{
+  "name": "sih26052-anc-sim",
+  "version": "0.1.0",
+  "description": "SIH26052 Round 1 web simulation console for the adaptive noise cancellation demo",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --env-file=.env src/app.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "onnxruntime-web": "^1.29.0"
+  }
+}

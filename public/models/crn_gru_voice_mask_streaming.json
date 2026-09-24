@@ -1,0 +1,17 @@
+{
+  "onnx": "crn_gru_voice_mask_streaming.onnx",
+  "sample_rate": 16000,
+  "n_fft": 512,
+  "hop_length": 128,
+  "win_length": 512,
+  "freq_bins": 257,
+  "gru_layers": 1,
+  "gru_hidden": 96,
+  "noise_classes": [
+    "stationary",
+    "non_stationary",
+    "impulsive"
+  ],
+  "context_frames": 6,
+  "chunk_frames": 8
+}

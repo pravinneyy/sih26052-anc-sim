@@ -1,0 +1,6 @@
+numpy>=1.26
+torch>=2.2
+soundfile>=0.12
+tqdm>=4.66
+onnx>=1.16
+onnxscript>=0.1.0

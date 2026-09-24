@@ -1,0 +1,15 @@
+node_modules/
+.env
+*.log
+.DS_Store
+Thumbs.db
+.claude/
+__pycache__/
+data/
+incoming_audio/
+/models/
+outputs/
+public/models/*.onnx
+*.pt
+*.pth
+*.onnx
