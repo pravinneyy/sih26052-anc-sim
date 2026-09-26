@@ -1,7 +1,8 @@
 /* ==========================================================================
    panel9.js — Live Audio Processing Lab: continuous mic (or a file/demo
-   clip played through the same path) run live through the trained
-   SIH26052 CRN/GRU model (rt_engine.js), enhanced audio audible within a
+   clip played through the same path) run live through the noise
+   suppression engine in rt_engine.js (trained SIH26052 CRN/GRU model +
+   adaptive classical suppressor), enhanced audio audible within a
    couple of chunks. No record-then-process step — the engine runs
    continuously from Start to Stop.
    ========================================================================== */
@@ -56,27 +57,20 @@ if (p9FileIn) {
   });
 }
 
-/* ---- live controls: floor / impulse attenuation / fast prior ---- */
-const p9PendingParams = { floorDb: -18, impulseExtraDb: -24, fastPriorWeight: 0.95, useFastPrior: true };
+/* ---- live controls: suppression depth / output volume ---- */
+const p9PendingParams = { suppressDb: 35, outputGainDb: 12 };
 function p9ApplyParams() { if (p9Engine) p9Engine.setParams(p9PendingParams); }
 
 const p9StrengthEl = document.getElementById('p9Strength');
 if (p9StrengthEl) p9StrengthEl.oninput = e => {
   document.getElementById('p9StrengthOut').textContent = e.target.value;
-  p9PendingParams.floorDb = +e.target.value;
+  p9PendingParams.suppressDb = +e.target.value;
   p9ApplyParams();
 };
-const p9ImpulseDbEl = document.getElementById('p9ImpulseDb');
-if (p9ImpulseDbEl) p9ImpulseDbEl.oninput = e => {
-  document.getElementById('p9ImpulseDbOut').textContent = e.target.value;
-  p9PendingParams.impulseExtraDb = +e.target.value;
-  p9ApplyParams();
-};
-const p9SwFastPrior = document.getElementById('p9SwFastPrior');
-if (p9SwFastPrior) p9SwFastPrior.onclick = () => {
-  const on = p9SwFastPrior.getAttribute('aria-pressed') !== 'true';
-  p9SwFastPrior.setAttribute('aria-pressed', on);
-  p9PendingParams.useFastPrior = on;
+const p9VolumeEl = document.getElementById('p9Volume');
+if (p9VolumeEl) p9VolumeEl.oninput = e => {
+  document.getElementById('p9VolumeOut').textContent = '+' + e.target.value;
+  p9PendingParams.outputGainDb = +e.target.value;
   p9ApplyParams();
 };
 
@@ -185,6 +179,7 @@ async function p9Start() {
   document.querySelectorAll('#p9SrcPick button, #p9File, #p9DemoPick').forEach(el => el.disabled = true);
   p9SetStatus(`Live — ${p9Kind === 'mic' ? 'microphone' : p9Kind === 'file' ? 'uploaded file' : 'built-in clip'}`);
   p9DrawReset();
+  p9WaveScale = 0.05; p9SpecTop = -20;
   p9MetricsTimer = setInterval(p9UpdateMetrics, 150);
 }
 
@@ -210,21 +205,20 @@ function p9Stop() {
 function p9UpdateMetrics() {
   if (!p9Engine) return;
   const m = p9Engine.metrics;
-  const set = (id, v, dp, unit) => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = (isFinite(v) ? v.toFixed(dp) : '—') + (unit ? `<span class="u">${unit}</span>` : '');
-  };
-  set('p9MNoise', m.noiseRedDb, 1, 'dB');
-  set('p9MSnr', m.snrGainDb, 1, 'dB');
-  document.getElementById('p9MClass').textContent = m.noiseClass.replace('_', '-');
-  set('p9MVad', m.vadProb * 100, 0, '%');
-  set('p9MImpulse', m.impulseProb * 100, 0, '%');
-  document.getElementById('p9MEvents').textContent = m.impulseEvents;
-  set('p9MInfer', m.inferMs, 1, 'ms');
-  set('p9MLatency', m.chunkMs + m.inferMs, 0, 'ms');
+  const html = (v, unit) => v + (unit ? `<span class="u">${unit}</span>` : '');
+  const num = (v, dp, signed) => isFinite(v) ? (signed && v > 0 ? '+' : '') + v.toFixed(dp) : '—';
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.innerHTML = v; };
+  set('p9MGap', html(num(m.gapCutDb, 0), 'dB'));
+  set('p9MTalk', html(num(m.talkCutDb, 0), 'dB'));
+  set('p9MVoiceKept', html(num(m.voiceKeptDb, 1, true), 'dB'));
+  set('p9MSnr', isFinite(m.snrInDb) ? html(`${num(m.snrInDb, 0)} → ${num(m.snrOutDb, 0)}`, 'dB') : html('—', 'dB'));
+  set('p9MVoice', m.voiceActive ? 'talking' : 'silent');
+  set('p9MClass', m.noiseClass);
+  set('p9MEvents', String(m.impulseEvents));
+  set('p9MLatency', html(num(m.latencyMs, 0), 'ms'));
   const t = document.getElementById('p9LiveTime');
   if (t) t.textContent = ((performance.now() - m.startedAt) / 1000).toFixed(1) + 's';
-  if (m.queued > 4) p9SetStatus(`Live — falling behind (${m.queued} chunks queued), try a shorter suppression floor or close other tabs`);
+  if (m.queued > 4) p9SetStatus(`Live — falling behind (${m.queued} chunks queued), close other tabs to free up CPU`);
 }
 
 /* ==========================================================================
@@ -251,8 +245,9 @@ function p9BandDb(samples) {
   }
   return bands;
 }
+let p9SpecTop = -20; // colour-scale ceiling, follows the loudest recent raw band so loud and quiet sources both show detail
 function p9Heat(db) {
-  const t = Math.max(0, Math.min(1, (db + 95) / 85));
+  const t = Math.max(0, Math.min(1, (db - p9SpecTop + 75) / 75));
   const r = Math.round(255 * Math.min(1, Math.max(0, t * 2.3 - 0.85)));
   const g = Math.round(255 * Math.min(1, Math.max(0, t * 1.7 - 0.25)));
   const b = Math.round(255 * Math.min(1, Math.max(0, 0.35 + t * 1.1 - Math.max(0, t * 2.1 - 0.9))));
@@ -266,41 +261,52 @@ function p9DrawReset() {
 }
 
 const P9_COL_W = 3;
+let p9WaveScale = 0.05; // shared full-scale for both wave lanes, follows the raw input's recent peak
 function p9OnChunk(result) {
+  const bg = CSS('--bg-screen') || '#06090D';
   const spec = document.getElementById('cv9Spec');
   if (spec) {
-    const c = spec.getContext('2d'), W = spec.width, H = spec.height, half = (H - 40) / 2, ch = half / P9_BANDS;
+    const c = spec.getContext('2d'), W = spec.width, H = spec.height, gap = 12, half = (H - gap) / 2, ch = half / P9_BANDS;
     c.drawImage(spec, -P9_COL_W, 0);
-    c.fillStyle = CSS('--bg-screen') || '#06090D';
+    c.fillStyle = bg;
     c.fillRect(W - P9_COL_W, 0, P9_COL_W, H);
     const rawBands = p9BandDb(result.raw), enhBands = p9BandDb(result.enh);
+    let top = -Infinity; for (let b = 0; b < P9_BANDS; b++) top = Math.max(top, rawBands[b]);
+    p9SpecTop = Math.max(-40, top > p9SpecTop ? top : p9SpecTop - 0.05);
     for (let b = 0; b < P9_BANDS; b++) {
       c.fillStyle = p9Heat(rawBands[b]);
-      c.fillRect(W - P9_COL_W, 8 + (P9_BANDS - 1 - b) * ch, P9_COL_W, Math.ceil(ch));
+      c.fillRect(W - P9_COL_W, (P9_BANDS - 1 - b) * ch, P9_COL_W, Math.ceil(ch));
       c.fillStyle = p9Heat(enhBands[b]);
-      c.fillRect(W - P9_COL_W, 32 + half + (P9_BANDS - 1 - b) * ch, P9_COL_W, Math.ceil(ch));
+      c.fillRect(W - P9_COL_W, half + gap + (P9_BANDS - 1 - b) * ch, P9_COL_W, Math.ceil(ch));
     }
-    c.fillStyle = '#C6D2D6'; c.font = '20px ' + (CSS('--font-sans') || 'sans-serif'); c.textAlign = 'left';
-    c.fillText('raw input', 10, 26);
-    c.fillText('enhanced', 10, 50 + half);
   }
 
   const wave = document.getElementById('cv9Wave');
   if (wave) {
-    const c = wave.getContext('2d'), W = wave.width, H = wave.height, mid = H / 2;
+    const c = wave.getContext('2d'), W = wave.width, H = wave.height, strip = 14;
+    const laneH = (H - strip - 8) / 2, rawMid = laneH / 2, enhMid = laneH + 4 + laneH / 2;
     c.drawImage(wave, -P9_COL_W, 0);
-    c.fillStyle = CSS('--bg-screen') || '#06090D';
+    c.fillStyle = bg;
     c.fillRect(W - P9_COL_W, 0, P9_COL_W, H);
     let rawMax = 0, enhMax = 0;
     for (let i = 0; i < result.raw.length; i++) { rawMax = Math.max(rawMax, Math.abs(result.raw[i])); enhMax = Math.max(enhMax, Math.abs(result.enh[i])); }
-    if (p9Engine && p9Engine.metrics.impulseProb > 0.5) {
-      c.fillStyle = 'rgba(255, 92, 92, .25)';
-      c.fillRect(W - P9_COL_W, 0, P9_COL_W, H);
+    p9WaveScale = Math.max(0.02, rawMax > p9WaveScale ? rawMax : 0.995 * p9WaveScale);
+    const amp = v => Math.min(1, v / p9WaveScale) * (laneH / 2 - 2);
+    if (result.impulse) {
+      c.fillStyle = 'rgba(255, 92, 92, .28)';
+      c.fillRect(W - P9_COL_W, 0, P9_COL_W, H - strip);
     }
+    c.fillStyle = 'rgba(255,255,255,.08)';
+    c.fillRect(W - P9_COL_W, rawMid, P9_COL_W, 1);
+    c.fillRect(W - P9_COL_W, enhMid, P9_COL_W, 1);
     c.fillStyle = CSS('--sysB') || '#FFB830';
-    c.fillRect(W - P9_COL_W, mid - rawMax * mid * 0.92, P9_COL_W, Math.max(1, rawMax * mid * 0.92 * 2));
+    c.fillRect(W - P9_COL_W, rawMid - amp(rawMax), P9_COL_W, Math.max(1, 2 * amp(rawMax)));
     c.fillStyle = CSS('--sysC') || '#00E5A3';
-    c.fillRect(W - P9_COL_W, mid - enhMax * mid * 0.6, P9_COL_W, Math.max(1, enhMax * mid * 0.6 * 2));
+    c.fillRect(W - P9_COL_W, enhMid - amp(enhMax), P9_COL_W, Math.max(1, 2 * amp(enhMax)));
+    if (result.voice) {
+      c.fillStyle = CSS('--sysAI') || '#9B8CFF';
+      c.fillRect(W - P9_COL_W, H - strip + 3, P9_COL_W, strip - 6);
+    }
   }
 }
 
@@ -308,10 +314,9 @@ function p9OnChunk(result) {
 function p9Reset() {
   if (p9Engine) p9Stop();
 
-  p9PendingParams.floorDb = -18; p9PendingParams.impulseExtraDb = -24; p9PendingParams.useFastPrior = true;
-  if (p9StrengthEl) { p9StrengthEl.value = -18; document.getElementById('p9StrengthOut').textContent = '-18'; }
-  if (p9ImpulseDbEl) { p9ImpulseDbEl.value = -24; document.getElementById('p9ImpulseDbOut').textContent = '-24'; }
-  if (p9SwFastPrior) p9SwFastPrior.setAttribute('aria-pressed', 'true');
+  p9PendingParams.suppressDb = 35; p9PendingParams.outputGainDb = 12;
+  if (p9StrengthEl) { p9StrengthEl.value = 35; document.getElementById('p9StrengthOut').textContent = '35'; }
+  if (p9VolumeEl) { p9VolumeEl.value = 12; document.getElementById('p9VolumeOut').textContent = '+12'; }
 
   document.querySelectorAll('#p9AbRow button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === 'enh'));
 

@@ -281,6 +281,11 @@ def train(args) -> Path:
     loader = DataLoader(dataset, batch_size=args.batch, shuffle=True, num_workers=args.workers, collate_fn=collate)
 
     model = TinyCRNGRUMaskNet(config).to(device)
+    if args.init_checkpoint and Path(args.init_checkpoint).exists():
+        state = torch.load(args.init_checkpoint, map_location=device, weights_only=False)
+        model.load_state_dict(state["state_dict"])
+        print(f"warm-started from {args.init_checkpoint} (epoch {state.get('epoch', '?')})")
+    deadline = time.time() + args.max_minutes * 60 if args.max_minutes else None
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
     scaler = torch.cuda.amp.GradScaler(enabled=args.amp and device.type == "cuda")
 
@@ -344,6 +349,8 @@ def train(args) -> Path:
             totals["acc"] += float(acc.item())
             totals["imp_recall"] += imp_recall
             n_batches += 1
+            if deadline and time.time() > deadline:
+                break
 
         avg = {k: v / max(1, n_batches) for k, v in totals.items()}
         print(
@@ -368,6 +375,10 @@ def train(args) -> Path:
                 out_path,
             )
             print(f"saved {out_path}")
+
+        if deadline and time.time() > deadline:
+            print(f"time budget of {args.max_minutes} min reached, stopping")
+            break
 
     meta_path = out_path.with_suffix(".json")
     meta_path.write_text(
@@ -397,6 +408,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--out", type=str, default="models/crn_gru_voice_mask.pt", help="Output checkpoint path.")
     p.add_argument("--export-onnx", type=str, default=None, help="Optional ONNX export path for browser/edge inference.")
     p.add_argument("--epochs", type=int, default=25)
+    p.add_argument("--init-checkpoint", type=str, default=None, help="Warm-start weights from an existing checkpoint.")
+    p.add_argument("--max-minutes", type=float, default=None, help="Stop training after this many minutes.")
     p.add_argument("--steps-per-epoch", type=int, default=500)
     p.add_argument("--batch", type=int, default=16)
     p.add_argument("--workers", type=int, default=0)

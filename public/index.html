@@ -634,10 +634,11 @@
         <div class="panel-title-row">
           <h2 id="h-p9">Live Audio Processing Lab</h2>
         </div>
-        <p class="lede">Speak into the mic — or play a file or built-in clip through the same path — and the trained
-          SIH26052 CRN/GRU model enhances it continuously, live, with the result audible within a couple of chunks.
-          This is the single-channel half of the architecture — the half that runs on the boom microphone and
-          feeds the radio.</p>
+        <p class="lede">Speak into the mic — or play a file or built-in clip through the same path — and the
+          background noise is stripped out live while your voice comes through, audible within a couple of chunks.
+          The trained SIH26052 CRN/GRU model runs alongside a classical noise tracker that adapts to whatever your
+          microphone actually hears. This is the single-channel half of the architecture — the half that runs on the
+          boom microphone and feeds the radio.</p>
       </header>
 
       <div class="note warn"><b>Use headphones for the microphone source</b> —
@@ -693,18 +694,27 @@
 
           <div class="card">
             <div class="card-header"><h3>3 · What's happening now</h3></div>
+            <div class="note" style="margin-bottom:12px">
+              <b style="color:var(--sysB)">Raw wave</b> — exactly what the microphone picked up: your voice
+              <i>plus</i> all the background noise, before any processing.<br>
+              <b style="color:var(--sysC)">Enhanced wave</b> — the same audio after noise suppression: what you hear
+              on "Enhanced" and what would go out over the radio. Between words it should drop to near-flat; while
+              you talk it should follow your voice.</div>
             <div class="scope">
               <canvas id="cv9Spec" width="1800" height="440"></canvas>
               <div class="scope-legend">
-                <span style="color:var(--text-muted);font-family:var(--font-mono);font-size:12px">live spectrogram — raw input above, enhanced below, scrolling</span>
+                <span><i class="swatch" style="border-color:var(--sysB)"></i>top: raw spectrogram</span>
+                <span><i class="swatch" style="border-color:var(--sysC)"></i>bottom: enhanced spectrogram</span>
+                <span style="color:var(--text-muted)">time scrolls right to left · brighter = louder · low pitch at the bottom of each half</span>
               </div>
             </div>
             <div class="scope" style="margin-top:12px">
-              <canvas id="cv9Wave" width="1800" height="220"></canvas>
+              <canvas id="cv9Wave" width="1800" height="260"></canvas>
               <div class="scope-legend">
-                <span><i class="swatch" style="border-color:var(--sysB)"></i>raw input</span>
-                <span><i class="swatch" style="border-color:var(--sysC)"></i>enhanced</span>
-                <span><i class="swatch" style="border-color:var(--sysA)"></i>impulse detected</span>
+                <span><i class="swatch" style="border-color:var(--sysB)"></i>top lane: raw wave</span>
+                <span><i class="swatch" style="border-color:var(--sysC)"></i>bottom lane: enhanced wave (same scale)</span>
+                <span><i class="swatch" style="border-color:var(--sysAI)"></i>voice detected</span>
+                <span><i class="swatch" style="border-color:var(--sysA)"></i>impulse blocked</span>
               </div>
             </div>
           </div>
@@ -714,51 +724,50 @@
           <div class="controls">
             <div class="card-header"><h3>Controls</h3></div>
             <div class="ctl">
-              <label for="p9Strength">Suppression floor <output id="p9StrengthOut">-18</output> dB</label>
-              <input type="range" id="p9Strength" min="-30" max="-3" step="1" value="-18">
-            </div>
-            <div class="ctl">
-              <label for="p9ImpulseDb">Impulse attenuation <output id="p9ImpulseDbOut">-24</output> dB</label>
-              <input type="range" id="p9ImpulseDb" min="-36" max="0" step="1" value="-24">
+              <label for="p9Strength">Noise suppression <output id="p9StrengthOut">35</output> dB</label>
+              <input type="range" id="p9Strength" min="15" max="50" step="1" value="35">
             </div>
             <div class="ctl" style="margin-bottom:0">
-              <div class="toggles">
-                <button class="tg" id="p9SwFastPrior" aria-pressed="true">Fast causal impulse prior</button>
-              </div>
+              <label for="p9Volume">Output volume <output id="p9VolumeOut">+12</output> dB</label>
+              <input type="range" id="p9Volume" min="0" max="30" step="1" value="12">
             </div>
           </div>
 
           <div class="card" style="margin-top:14px">
             <div class="card-header"><h3>Measured — live</h3></div>
             <div class="readouts">
-              <div class="readout good"><div class="lbl">Noise floor reduction</div>
-                <div class="val" id="p9MNoise">—<span class="u">dB</span></div></div>
-              <div class="readout good"><div class="lbl">Estimated SNR gain</div>
+              <div class="readout good"><div class="lbl">Noise cut between words</div>
+                <div class="val" id="p9MGap">—<span class="u">dB</span></div></div>
+              <div class="readout good"><div class="lbl">Noise cut while talking</div>
+                <div class="val" id="p9MTalk">—<span class="u">dB</span></div></div>
+              <div class="readout"><div class="lbl">Voice kept</div>
+                <div class="val" id="p9MVoiceKept">—<span class="u">dB</span></div></div>
+              <div class="readout"><div class="lbl">Voice-to-noise, before → after</div>
                 <div class="val" id="p9MSnr">—<span class="u">dB</span></div></div>
-              <div class="readout"><div class="lbl">Detected noise class</div>
+              <div class="readout"><div class="lbl">Voice now</div>
+                <div class="val" id="p9MVoice" style="color:var(--sysAI)">—</div></div>
+              <div class="readout"><div class="lbl">Background noise</div>
                 <div class="val" id="p9MClass" style="color:var(--sysAI)">—</div></div>
-              <div class="readout"><div class="lbl">Voice activity</div>
-                <div class="val" id="p9MVad">—<span class="u">%</span></div></div>
-              <div class="readout"><div class="lbl">Impulse probability</div>
-                <div class="val" id="p9MImpulse">—<span class="u">%</span></div></div>
-              <div class="readout"><div class="lbl">Impulse events</div>
+              <div class="readout"><div class="lbl">Impulses blocked</div>
                 <div class="val" id="p9MEvents">—</div></div>
-              <div class="readout"><div class="lbl">Inference time / chunk</div>
-                <div class="val" id="p9MInfer">—<span class="u">ms</span></div></div>
-              <div class="readout"><div class="lbl">Added latency</div>
+              <div class="readout"><div class="lbl">Delay, mic to speaker</div>
                 <div class="val" id="p9MLatency">—<span class="u">ms</span></div></div>
             </div>
+            <p style="font-size:12px;color:var(--text-muted);margin:10px 0 0">Averaged over the last few seconds.
+              "Voice kept" near 0 dB means your voice passes untouched; the noise-cut figures are how much quieter
+              the background is on the enhanced output than on the raw input. Stay quiet for a second after pressing
+              Start so the engine can learn the room.</p>
           </div>
 
           <div class="card" style="margin-top:14px">
             <div class="card-header"><h3>What to demonstrate</h3></div>
-            <p>Start live enhancement on the mic, speak, then flip Raw/Enhanced back and forth without stopping —
-              the noise floor drop is audible instantly on the switch.</p>
-            <p>Switch the source to the built-in impulsive clip and watch <b>Impulse probability</b> and
-              <b>Impulse events</b> react in real time as gunshot-like transients arrive — that's the model's own
-              impulse head plus the fast causal energy-ratio prior firing together.</p>
-            <p>Turning off <b>Fast causal impulse prior</b> shows the neural model's impulse detection alone —
-              usually a little slower to react than the two combined.</p>
+            <p>Start live enhancement on the mic, stay quiet for a second, then talk with a fan, AC or traffic noise
+              in the background. Flip Raw/Enhanced back and forth without stopping — on Enhanced the background
+              drops away between words while your voice stays clear.</p>
+            <p>Clap, knock or drop something: the <b>Impulses blocked</b> counter ticks up and the bang is ducked
+              instead of reaching the listener.</p>
+            <p>Drag <b>Noise suppression</b> down to 15 dB for a more natural room tone, or up to 50 dB for near-total
+              silence between words.</p>
           </div>
 
           <div class="card" style="margin-top:14px">
@@ -771,7 +780,10 @@
               <tr><th>Model</th><td>Causal CRN (3 conv layers) + 1-layer GRU (96 units)</td></tr>
               <tr><th>Streaming chunk</th><td>8 new frames (64 ms) per inference call</td></tr>
               <tr><th>Recurrent state</th><td>GRU hidden state persisted across chunks</td></tr>
-              <tr><th>Impulse handling</th><td>Neural impulse head + causal energy-ratio prior (max of the two)</td></tr>
+              <tr><th>Noise tracking</th><td>MCRA minimum statistics (1.5 s) + fast band floor for swelling noise</td></tr>
+              <tr><th>Gain rule</th><td>OM-LSA with speech-presence probability, fused with the neural mask</td></tr>
+              <tr><th>Voice gate</th><td>Closes between words (240 ms hold), low cut below 90 Hz</td></tr>
+              <tr><th>Impulse handling</th><td>Energy-ratio onset + broadband check / neural impulse head, ducked 30 dB</td></tr>
             </table>
           </div>
 
